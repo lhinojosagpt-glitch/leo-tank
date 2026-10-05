@@ -4,12 +4,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import ENGINE_VERSION
 from app.api import router
-from app.config import ROOT
+from app.config import ALLOWED_CLIENTS, ROOT
 from app.db import init_db
 
 @asynccontextmanager
@@ -19,6 +19,17 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="TANK650 ENGINE", version=ENGINE_VERSION, description="API 650 calculation and parametric tank design", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def restrict_network_clients(request, call_next):
+    """Optionally restrict LAN access to an explicit peer-address allowlist."""
+    client = request.client.host if request.client else ""
+    if ALLOWED_CLIENTS and client not in ALLOWED_CLIENTS:
+        return JSONResponse(status_code=403, content={"detail": "Client address is not authorized."})
+    return await call_next(request)
+
+
 app.add_middleware(CORSMiddleware, allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 app.include_router(router)
 
