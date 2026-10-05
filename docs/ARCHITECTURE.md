@@ -34,3 +34,18 @@ El frontend nunca contiene fórmulas API 650. Three.js y OpenSCAD consumen `Tank
 
 Los módulos fuera del perfil T-78 deben incorporarse como nuevos perfiles y fórmulas registradas. No se debe ampliar el perfil congelado de forma silenciosa.
 
+## Shell de aplicación v0.2
+
+```text
+AppShell
+├── Topbar: contexto, guardado y cálculo
+├── ModuleNavigation: rutas y workspaces
+├── ModuleWorkspace: editores y vistas por disciplina
+├── ModelBrowser ↔ TankViewer ↔ ResultInspector
+├── CalculationInspector: traza global fija
+└── Statusbar: motor, run y feedback
+```
+
+`useTankWorkspace` orquesta borrador, revisión persistida, run activo, selección y navegación. Las fórmulas siguen exclusivamente en Python. La geometría 3D recibe entidades identificables desde `TankGeometrySpec`; el frontend no infiere espesores de diseño.
+
+Véase `docs/UX_V2.md` para los estados de interacción, selección cruzada y distinción entre techo físico y modelo analítico.

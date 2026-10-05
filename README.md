@@ -1,4 +1,4 @@
-# TANK650 ENGINE
+# TANK650 ENGINE v0.2
 
 Motor auditable de cálculo y diseño paramétrico de tanques API 650, perfil inicial congelado `API650_12E_T78`.
 
@@ -6,7 +6,7 @@ La bitácora integral para revisión independiente está en [`docs/BITACORA_DESA
 
 El repositorio implementa el caso T-78 con separación estricta entre cálculo Python, persistencia SQLite, API REST, interfaz React/TypeScript/Three.js y exportación OpenSCAD. La interfaz usa una paleta clara de escritorio técnico.
 
-## Estado del MVP
+## Estado de la aplicación
 
 - Método 1-Foot reproducido para los 8 cursos con tolerancia absoluta de 0,01 mm.
 - Cadena sísmica Annex E: `Ss`, `S1`, `Ts`, `Ks`, `Tc`, `SDS`, `Ai`, `Ac`, `Wc`, `Wi`, cortantes, brazos, momentos, `Av`, `Ge`, `wa`, `wt` y `J`.
@@ -16,7 +16,11 @@ El repositorio implementa el caso T-78 con separación estricta entre cálculo P
 - Fondo central/anular, viento, viga de rigidez y pesos documentados.
 - Proyectos, escenarios, revisiones inmutables, runs y batch de variantes en SQLite.
 - API directa para n8n, exportación JSON y SCAD, y reportes HTML/PDF/JSON.
-- Visor Three.js con cursos independientes y 60 anclajes paramétricos.
+- Workspaces editables por disciplina, navegación funcional y estado de borrador/revisión/run.
+- Inspector fijo de resultados y drawer de trazas sin desplazamiento global.
+- Visor Three.js con 192 planchas seleccionables, fondo zonificado, 60 anclajes y domo geodésico representativo.
+
+La arquitectura de interacción y sus límites se describen en [`docs/UX_V2.md`](docs/UX_V2.md).
 
 Los resultados de viento y pesos marcados como `REFERENCE_RECONSTRUCTION` conservan la procedencia de TANK 2016; no se ha inventado una ecuación normativa cuando el documento no expone toda la cadena.
 
@@ -47,6 +51,9 @@ Hitos individuales:
 python -m pytest backend/tests/golden/test_t78_shell.py
 python -m pytest backend/tests/golden/test_t78_seismic.py
 python -m pytest backend/tests/golden/test_t78_full.py
+cd frontend
+pnpm test
+pnpm run build
 ```
 
 ## Estructura

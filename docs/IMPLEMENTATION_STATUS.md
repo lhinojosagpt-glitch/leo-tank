@@ -12,7 +12,7 @@
 | 7 FastAPI | DONE | Endpoints de cálculo, persistencia, batch, backup y exportación. |
 | 8 Geometry | DONE | `TankGeometrySpec` con snapshot por run. |
 | 9 OpenSCAD | DONE | Generador paramétrico; ejecución CLI queda como extensión. |
-| 10 React/Three.js | DONE | Interfaz clara, escritorio técnico, 3D y audit panel. |
+| 10 React/Three.js | DONE v0.2 | Workspaces, navegación, editores, árbol, 3D por plancha e inspectores fijos. |
 | 11 Reports | DONE | HTML, PDF y JSON desde snapshot del run. |
 | 12 Variant Engine | IN PROGRESS | Batch y deltas listos; promoción de variante requiere endpoint adicional. |
 | 13 n8n readiness | DONE | API key opcional, cálculo directo, batch y guía. |
@@ -25,3 +25,14 @@
 - Ampliar reportes con todas las tablas y anexos gráficos.
 - Extender perfiles sin modificar silenciosamente `API650_12E_T78`.
 
+## Corte v0.2 — 2026-10-05
+
+- Navegación y edición por módulos: **DONE**.
+- Guardado con feedback y revisiones inmutables: **DONE**.
+- Inspector de cálculo accesible sin scroll global: **DONE**.
+- Selección cruzada árbol/3D/propiedades/trazas: **DONE**.
+- Casco con 192 planchas identificables y costuras alternadas: **DONE**.
+- Fondo zonificado y domo geodésico representativo: **DONE**.
+- Diseño estructural de domo del proveedor: **NOT_IMPLEMENTED**, fuera del alcance demostrado.
+- Validación visual 1600×900 y 1920×1080: **DONE**.
+- Backend: **10 pruebas pasan**. Frontend: **1 flujo integrado pasa**. Build: **DONE** con advertencia de tamaño de bundle.

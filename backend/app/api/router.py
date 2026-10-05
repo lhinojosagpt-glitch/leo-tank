@@ -108,7 +108,7 @@ def create_scenario(project_id: str, body: ScenarioCreate, db: Session = Depends
 @router.get("/scenarios/{scenario_id}/revisions")
 def list_revisions(scenario_id: str, db: Session = Depends(session)) -> list[dict]:
     rows = db.scalars(select(ScenarioRevision).where(ScenarioRevision.scenario_id == scenario_id).order_by(ScenarioRevision.revision_number)).all()
-    return [{"id": row.id, "revision_number": row.revision_number, "derived_from_revision_id": row.derived_from_revision_id, "locked": row.locked, "changes": row.changes_json} for row in rows]
+    return [{"id": row.id, "revision_number": row.revision_number, "derived_from_revision_id": row.derived_from_revision_id, "locked": row.locked, "changes": row.changes_json, "created_at": row.created_at, "runs": [{"id": run.id, "status": run.status, "engine_version": run.engine_version, "created_at": run.created_at, "completed_at": run.completed_at} for run in row.runs]} for row in rows]
 
 
 @router.post("/scenarios/{scenario_id}/revisions", dependencies=[Depends(write_access)])
@@ -122,6 +122,30 @@ def create_revision(scenario_id: str, body: RevisionCreate, db: Session = Depend
     _audit(db, "REVISION_CREATED", "revision", revision.id, {"revision_number": number, "changes": body.changes})
     db.commit()
     return {"id": revision.id, "revision_number": revision.revision_number}
+
+
+@router.get("/revisions/{revision_id}/inputs")
+def get_revision_inputs(revision_id: str, db: Session = Depends(session)) -> dict:
+    revision = db.get(ScenarioRevision, revision_id)
+    if revision is None:
+        raise HTTPException(404, "Revision not found")
+    return {"revision_id": revision.id, "revision_number": revision.revision_number, "locked": revision.locked, "inputs": revision.input_json}
+
+
+@router.post("/revisions/{revision_id}/derive", dependencies=[Depends(write_access)])
+def derive_revision(revision_id: str, db: Session = Depends(session)) -> dict:
+    revision = db.get(ScenarioRevision, revision_id)
+    if revision is None:
+        raise HTTPException(404, "Revision not found")
+    return calculate(unwrap(revision.input_json)).to_dict()
+
+
+@router.get("/revisions/{revision_id}/geometry")
+def get_revision_geometry(revision_id: str, db: Session = Depends(session)) -> dict:
+    revision = db.get(ScenarioRevision, revision_id)
+    if revision is None:
+        raise HTTPException(404, "Revision not found")
+    return calculate(unwrap(revision.input_json)).geometry
 
 
 @router.post("/revisions/{revision_id}/runs", dependencies=[Depends(write_access)])
@@ -146,6 +170,48 @@ def get_run(run_id: str, db: Session = Depends(session)) -> dict:
     if run is None:
         raise HTTPException(404, "Run not found")
     return {"id": run.id, "revision_id": run.revision_id, "status": run.status, "result": run.result_json}
+
+
+@router.get("/runs/{run_id}/summary")
+def get_run_summary(run_id: str, db: Session = Depends(session)) -> dict:
+    run = db.get(CalculationRun, run_id)
+    if run is None:
+        raise HTTPException(404, "Run not found")
+    return {"run_id": run.id, "status": run.status, "summary": run.result_json.get("summary", {}), "overall_status": run.result_json.get("overall_status")}
+
+
+@router.get("/runs/{run_id}/results/{module_name}")
+def get_run_module(run_id: str, module_name: str, db: Session = Depends(session)) -> dict:
+    run = db.get(CalculationRun, run_id)
+    if run is None:
+        raise HTTPException(404, "Run not found")
+    module = run.result_json.get("modules", {}).get(module_name)
+    if module is None:
+        raise HTTPException(404, "Module result not found")
+    return {"run_id": run.id, "module": module_name, "result": module}
+
+
+@router.get("/runs/{run_id}/trace/{formula_id}")
+def get_formula_trace(run_id: str, formula_id: str, db: Session = Depends(session)) -> dict:
+    run = db.get(CalculationRun, run_id)
+    if run is None:
+        raise HTTPException(404, "Run not found")
+    matches = [trace for module in run.result_json.get("modules", {}).values() for trace in module.get("traces", []) if trace.get("formula_id") == formula_id]
+    if not matches:
+        raise HTTPException(404, "Formula trace not found")
+    return {"run_id": run.id, "formula_id": formula_id, "traces": matches}
+
+
+@router.get("/scenarios/{scenario_id}/history")
+def get_scenario_history(scenario_id: str, db: Session = Depends(session)) -> dict:
+    scenario = db.get(DesignScenario, scenario_id)
+    if scenario is None:
+        raise HTTPException(404, "Scenario not found")
+    revisions = db.scalars(select(ScenarioRevision).where(ScenarioRevision.scenario_id == scenario_id).order_by(ScenarioRevision.revision_number)).all()
+    return {
+        "scenario": {"id": scenario.id, "name": scenario.name},
+        "revisions": [{"id": revision.id, "revision_number": revision.revision_number, "derived_from_revision_id": revision.derived_from_revision_id, "locked": revision.locked, "changes": revision.changes_json, "created_at": revision.created_at, "runs": [{"id": run.id, "status": run.status, "input_sha256": run.input_sha256, "created_at": run.created_at, "completed_at": run.completed_at} for run in revision.runs]} for revision in revisions],
+    }
 
 
 @router.get("/runs/{run_id}/trace")

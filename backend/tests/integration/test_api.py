@@ -47,3 +47,42 @@ def test_immutable_revision_run_and_variant_batch() -> None:
         batch = client.post("/api/v1/variant-batches", json={"name": "Golden batch", "baseline_inputs": fixture, "variants": [{"name": "SG 0.90", "changes": {"product.specific_gravity": 0.90}}, {"name": "Sp 0.50", "changes": {"seismic.Sp": 0.50}}]})
         assert batch.status_code == 200
         assert len(batch.json()["matrix"]) == 2
+
+
+def test_v2_revision_read_models_and_geometry() -> None:
+    token = uuid4().hex[:8]
+    with client:
+        fixture = client.get("/api/v1/fixtures/T78_2019").json()
+        project = client.post("/api/v1/projects", json={"name": f"UX V2 {token}", "tank_tag": "T-78"}).json()
+        scenario = client.post(f"/api/v1/projects/{project['id']}/scenarios", json={"name": "BASELINE"}).json()
+        revision = client.post(f"/api/v1/scenarios/{scenario['id']}/revisions", json={"inputs": fixture}).json()
+
+        inputs = client.get(f"/api/v1/revisions/{revision['id']}/inputs")
+        assert inputs.status_code == 200
+        assert inputs.json()["inputs"]["project"]["tank_tag"] == "T-78"
+
+        geometry = client.get(f"/api/v1/revisions/{revision['id']}/geometry")
+        assert geometry.status_code == 200
+        spec = geometry.json()
+        assert spec["schema_version"] == "2.0"
+        assert len(spec["courses"]) == 8
+        assert len(spec["courses"][0]["plates"]) == 24
+        assert spec["courses"][0]["plates"][0]["id"] == "C01-P01"
+        assert spec["physical_roof"]["type"] == "aluminum_geodesic_dome"
+
+        run = client.post(f"/api/v1/revisions/{revision['id']}/runs").json()
+        summary = client.get(f"/api/v1/runs/{run['run_id']}/summary")
+        assert summary.status_code == 200
+        assert round(summary.json()["summary"]["seismic"]["J"], 4) == 2.4059
+
+        module = client.get(f"/api/v1/runs/{run['run_id']}/results/shell")
+        assert module.status_code == 200
+        assert len(module.json()["result"]["values"]["courses"]) == 8
+
+        trace = client.get(f"/api/v1/runs/{run['run_id']}/trace/API650_12E_5_6_3_2_ONE_FOOT_DESIGN")
+        assert trace.status_code == 200
+        assert len(trace.json()["traces"]) == 8
+
+        history = client.get(f"/api/v1/scenarios/{scenario['id']}/history")
+        assert history.status_code == 200
+        assert len(history.json()["revisions"][0]["runs"]) == 1

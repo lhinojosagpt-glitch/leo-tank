@@ -14,3 +14,5 @@ output/pdf/
 /planos referenciales/
 .env
 .codex-tmp/
+.pnpm-store/
+tmp/

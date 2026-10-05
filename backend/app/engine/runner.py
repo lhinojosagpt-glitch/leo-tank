@@ -51,5 +51,5 @@ def calculate(data: dict) -> CalculationResult:
         canonical_sha256(data),
         summary,
         modules,
-        build_geometry_spec(data),
+        build_geometry_spec(data, modules),
     )

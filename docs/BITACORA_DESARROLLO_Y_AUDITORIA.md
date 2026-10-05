@@ -1,9 +1,9 @@
 # Bitácora de desarrollo y guía de auditoría
 
 **Proyecto:** TANK650 ENGINE — caso T-78  
-**Versión documentada:** 0.1.0  
-**Fecha de corte:** 2026-10-04  
-**Estado:** MVP funcional, limitado al perfil congelado `API650_12E_T78`  
+**Versión documentada:** 0.2.0
+**Fecha de corte:** 2026-10-05
+**Estado:** aplicación técnica v0.2 funcional, limitada al perfil congelado `API650_12E_T78`
 **Propósito de este archivo:** entregar a un revisor humano o a otra IA un punto de entrada único para reconstruir qué se desarrolló, con qué fuentes, qué se verificó y qué no debe darse por concluido.
 
 ## 1. Alcance solicitado y resultado entregado
@@ -33,6 +33,7 @@ Los siguientes hashes SHA-256 identifican exactamente las fuentes usadas en este
 | `planos referenciales/8. DISTRIBUCIÓN DE PLANCHAS EN CILINDRO TANQUE T-78.pdf` | `65AF24FBAFE874A54C4F991E16C5B180691E5B2009E7C25255D70B3F15848133` |
 | Prompt maestro adjunto `Texto pegado.txt` | `59BA03812A8CBDF8B746ECEC51AFF6D255B68781D60D9F40DE95DE836D5B8388` |
 | Fixture derivado `data/fixtures/T78_2019.json` | `4247A90BB2A2665DF65F95C8DA796ED53310053D888467391A387C148D54049B` |
+| Prompt UX/UI v0.2 de 120 puntos `Texto pegado.txt` | `242C09D060FDD2E30860622168E1365478840E958375F78E0C38E06FE29D1BBC` |
 
 El prompt maestro original está almacenado por Codex fuera del repositorio en:
 
@@ -72,6 +73,19 @@ Para una auditoría portable, el usuario debe entregar también ese archivo a la
 - Se añadieron pruebas doradas y de integración.
 - Se construyó el frontend de producción y se sirvió desde FastAPI.
 - Se verificó manualmente en navegador la carga del ejemplo, el cálculo, el modelo 3D y el panel de resultados.
+
+### 2026-10-05 — refactorización UX/UI y modelo 3D v0.2
+
+- Se confirmó la recepción íntegra del prompt UX/UI de 120 puntos y se registró su hash.
+- Se creó el commit base local `dda226a` (`chore: snapshot initial MVP v0.1`) antes de modificar el proyecto.
+- Se reemplazó la página vertical por un shell de escritorio con workspaces y desplazamiento interno.
+- Se habilitaron editores por disciplina, navegación con URL, dirty state, guardado con confirmación e historial.
+- La traza inferior se reemplazó por un inspector fijo invocable desde resultados y tablas.
+- Se modelaron 24 planchas por curso, 192 en total, con costuras alternadas y selección cruzada.
+- Se añadió fondo zonificado y domo geodésico físico representativo, separado del modelo analítico.
+- Se ampliaron contratos REST para revisión, geometría, resultados, trazas e historial.
+- Se ejecutaron 10 pruebas backend, 1 prueba integrada frontend y el build de producción con resultado satisfactorio.
+- Se realizó control visual de la aplicación a 1600×900 y 1920×1080.
 
 ## 4. Arquitectura implementada
 
@@ -208,7 +222,7 @@ Resultado del 2026-10-04: compilación TypeScript y Vite exitosa. Vite emitió u
 | Pesos | Revisión requerida | Algunos valores conservan procedencia de referencia |
 | Base de datos | Terminado para MVP | Auditar concurrencia, migraciones futuras y backup |
 | API | Terminado para MVP local | Auditar autenticación antes de exponer a red |
-| Interfaz y 3D | Terminado para MVP | No todos los parámetros internos están expuestos como campos |
+| Interfaz y 3D | Terminado v0.2 | Workspaces editables, árbol, 192 planchas e inspectores fijos |
 | Batch de variantes | Parcial | Cálculo y deltas listos; falta promoción persistida de variante |
 | OpenSCAD | Parcial | Genera fuente; ejecución automática de CLI queda pendiente |
 | Reportes | Terminado para MVP | Ampliar tablas/anexos para entrega formal |
@@ -219,7 +233,7 @@ Resultado del 2026-10-04: compilación TypeScript y Vite exitosa. Vite emitió u
 - Este repositorio implementa el perfil T-78; no es todavía un calculador general certificado de API 650.
 - No se debe usar el resultado como sustituto de la revisión y firma de un ingeniero responsable.
 - Las fórmulas normativas deben comprobarse contra una copia autorizada de la edición aplicable de API 650.
-- La interfaz expone solo una parte de los parámetros disponibles en el fixture y en la API.
+- Los campos del perfil T-78 están organizados por disciplina; al ampliar el perfil deben añadirse definiciones de formulario explícitas.
 - La promoción de una variante a escenario/revisión no tiene endpoint dedicado.
 - No se ejecuta OpenSCAD automáticamente para producir STL/3MF/PNG.
 - Los reportes aún no contienen todas las tablas y anexos gráficos posibles.
@@ -227,7 +241,7 @@ Resultado del 2026-10-04: compilación TypeScript y Vite exitosa. Vite emitió u
 - Las dependencias frontend usan la etiqueta `latest`; para reproducibilidad formal deben fijarse versiones y conservarse el lockfile.
 - Existe una advertencia de bundle frontend superior a 500 kB.
 - Existe una advertencia de deprecación en la pareja Starlette/TestClient-httpx.
-- En el momento de esta bitácora la rama `master` no tiene commits: todos los archivos aparecen como no rastreados. Por tanto, Git todavía no ofrece trazabilidad cronológica ni un commit base verificable.
+- El commit local `dda226a` congela el MVP v0.1 previo a la refactorización y permite auditar el cambio v0.2 contra una base identificable.
 
 ## 11. Documentos complementarios
 
