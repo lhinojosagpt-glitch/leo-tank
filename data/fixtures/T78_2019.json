@@ -1,0 +1,209 @@
+{
+  "fixture_id": "T78_2019",
+  "fixture_version": "1.0.0",
+  "project": {
+    "tank_tag": "T-78",
+    "name": "Tanque T-78",
+    "client": "PETROPERU S.A.",
+    "location": "Refinería Conchán, Lima, Perú"
+  },
+  "standard_profile": {
+    "id": "API650_12E_T78",
+    "standard": "API 650",
+    "edition": "12th Edition",
+    "scope": "Frozen profile limited to the documented T-78 case"
+  },
+  "geometry": {
+    "nominal_diameter_m": 45.725,
+    "internal_diameter_m": 45.700,
+    "shell_height_m": 19.200,
+    "design_liquid_height_m": 18.700,
+    "course_height_m": 2.400,
+    "bottom_slope_percent": 1.0
+  },
+  "product": {
+    "specific_gravity": 0.8778,
+    "design_temperature_C": 43.0,
+    "design_pressure_kPa": 0.75
+  },
+  "materials": {
+    "shell": {
+      "name": "ASTM A36",
+      "design_stress_psi": 23200.0,
+      "hydrotest_stress_psi": 24900.0,
+      "yield_strength_psi": 36000.0,
+      "ultimate_strength_psi": 58000.0
+    },
+    "bottom": {
+      "name": "ASTM A36",
+      "yield_strength_psi": 36000.059
+    },
+    "anchors": {
+      "name": "ASTM F1554 Grade 36",
+      "yield_strength_kPa": 248206.0
+    },
+    "weld": {
+      "name": "E60xx",
+      "yield_strength_psi": 48000.0
+    }
+  },
+  "shell": {
+    "method": "ONE_FOOT",
+    "joint_efficiency": 1.0,
+    "corrosion_allowance_mm": 1.6,
+    "minimum_nominal_thickness_mm": 8.0,
+    "courses": [
+      {"course": 1, "height_m": 2.4, "thickness_mm": 25.0, "material": "ASTM A36 Group II"},
+      {"course": 2, "height_m": 2.4, "thickness_mm": 22.0, "material": "ASTM A36 Group II"},
+      {"course": 3, "height_m": 2.4, "thickness_mm": 19.0, "material": "ASTM A36 Group I"},
+      {"course": 4, "height_m": 2.4, "thickness_mm": 16.0, "material": "ASTM A36 Group I"},
+      {"course": 5, "height_m": 2.4, "thickness_mm": 12.7, "material": "ASTM A36 Group I"},
+      {"course": 6, "height_m": 2.4, "thickness_mm": 9.5, "material": "ASTM A36 Group I"},
+      {"course": 7, "height_m": 2.4, "thickness_mm": 8.0, "material": "ASTM A36 Group I"},
+      {"course": 8, "height_m": 2.4, "thickness_mm": 8.0, "material": "ASTM A36 Group I"}
+    ]
+  },
+  "bottom": {
+    "central_required_mm": 8.0,
+    "central_selected_mm": 8.0,
+    "annular_required_mm": 7.6,
+    "annular_selected_mm": 9.0,
+    "annular_corrosion_allowance_mm": 3.0,
+    "annular_effective_thickness_mm": 6.0,
+    "annular_required_width_mm": 685.4,
+    "annular_selected_width_mm": 800.0
+  },
+  "wind": {
+    "velocity_m_s": 25.0,
+    "Kz": 1.33,
+    "Kzt": 1.21,
+    "Kd": 0.95,
+    "importance": 1.25,
+    "gust_factor": 0.85,
+    "velocity_factor": 0.24282,
+    "pressure_kPa": 0.86207,
+    "exposed_area_m2": 1067.3,
+    "shear_N": 920080.0,
+    "overturning_moment_Nm": 10734000.0,
+    "resisting_moment_Nm": 97225000.0,
+    "anchors_required": false
+  },
+  "wind_girder": {
+    "required_section_modulus_mm3": 564090.0,
+    "maximum_unstiffened_height_m": 22.820,
+    "intermediate_girders_required": 0,
+    "top_detail": "API 650 Table 5-20 Detail E",
+    "B_mm": 355.60
+  },
+  "seismic": {
+    "ground_motion_type": "probabilistic",
+    "site_class": "D",
+    "seismic_use_group": 1,
+    "Sp": 0.45,
+    "Fa": 1.05,
+    "Fv": 1.50,
+    "K": 1.50,
+    "Q": 1.0,
+    "TL_s": 4.0,
+    "importance_factor": 1.0,
+    "Rwi": 4.0,
+    "Rwc": 2.0,
+    "Ai_lower_bound": 0.007,
+    "internal_pressure_line_load_lb_ft": 587.5,
+    "shear_resistance_N": 83870760.0,
+    "shell_compressive_stress_kPa": 8765.0,
+    "shell_allowable_stress_kPa": 42340.0,
+    "sloshing_height_m": 1.7576,
+    "required_freeboard_m": 1.2303
+  },
+  "anchorage": {
+    "selected_bolts": 60,
+    "diameter_mm": 63.5,
+    "effective_area_mm2": 2039.8722,
+    "offset_m": 0.1125,
+    "corrosion_allowance_mm": 6.35,
+    "load_cases": [
+      {"id": "DESIGN_PRESSURE", "name": "Design pressure", "uplift_N": 56472.9, "allowable_kPa": 103419.0},
+      {"id": "SEISMIC_OPE", "name": "Seismic OPE", "uplift_N": 20710680.0, "allowable_kPa": 198564.0},
+      {"id": "DESIGN_PRESSURE_SEISMIC", "name": "Design pressure + Seismic OPE", "uplift_N": 22401366.0, "allowable_kPa": 198564.0}
+    ]
+  },
+  "anchor_chair": {
+    "gusset_thickness_mm": 38.1,
+    "gusset_top_width_mm": 240.0,
+    "gusset_base_width_mm": 60.0,
+    "gusset_height_mm": 350.0,
+    "gusset_spacing_mm": 220.0,
+    "top_plate_thickness_mm": 50.8,
+    "radial_width_mm": 240.0,
+    "circumferential_width_mm": 320.0,
+    "bolt_diameter_mm": 63.5,
+    "eccentricity_mm": 100.0,
+    "corrosion_allowance_mm": 1.6,
+    "bolt_load_N": 687269.0,
+    "allowable_bending_kPa": 223386.0
+  },
+  "roof": {
+    "physical_roof": {
+      "type": "aluminum_geodesic_dome",
+      "design_scope": "supplier",
+      "note": "Physical geometry; structural design is outside this MVP."
+    },
+    "analysis_roof": {
+      "type": "conservative_surrogate",
+      "material": "ASTM A36",
+      "thickness_mm": 9.0,
+      "purpose": "Reproduce the TANK 2016 structural load model"
+    }
+  },
+  "weights": {
+    "operating_fluid_lb": 59358624.0,
+    "shell_only_lb": 739655.0,
+    "shell_and_attachments_lb": 739655.0,
+    "roof_seismic_lb": 274270.688,
+    "bottom_lb": 224017.625,
+    "shell_cg_ft": 24.264,
+    "roof_cg_ft": 69.692,
+    "gross_procurement_weight_N": 6420000.0,
+    "summary_N": {
+      "shell_corroded": 2850291.0,
+      "shell_non_corroded": 3189989.0,
+      "annular_plate": 56866.0,
+      "bottom_plate": 939565.0,
+      "roof_plates": 1219956.0,
+      "roof_framing": 0.0,
+      "attachments": 100000.0,
+      "operating_fluid": 264027152.0,
+      "water": 308923584.0,
+      "operating_non_corroded": 269533536.0,
+      "test_non_corroded": 314429952.0,
+      "empty_non_corroded": 5506376.0
+    }
+  },
+  "source_documents": [
+    {"id": "MEMORY", "name": "5. DISEÑO MECÁNICO TANQUE T-78.pdf", "type": "calculation_memory", "pages": 23},
+    {"id": "TANK2016", "name": "6. Reporte software Tank 2016 Tanque T-78_REV0.pdf", "type": "software_report", "pages": 29},
+    {"id": "BOTTOM_DRAWING", "name": "7. DISTRIBUCIÓN DE PLANCHAS EN EL FONDO TANQUE T-78.pdf", "type": "AFC_drawing", "pages": 1},
+    {"id": "SHELL_DRAWING", "name": "8. DISTRIBUCIÓN DE PLANCHAS EN CILINDRO TANQUE T-78.pdf", "type": "AFC_drawing", "pages": 1}
+  ],
+  "source_provenance": [
+    {"path": "geometry.nominal_diameter_m", "document": "TANK2016", "page": 3, "field": "Tank Nominal Diameter"},
+    {"path": "geometry.shell_height_m", "document": "TANK2016", "page": 3, "field": "Tank Shell Height"},
+    {"path": "shell.courses", "document": "TANK2016", "pages": [3, 4, 8], "field": "Shell Course Height and Thickness"},
+    {"path": "seismic", "document": "TANK2016", "pages": [11, 12, 13, 14, 15, 16, 17], "field": "Seismic Evaluation Results"},
+    {"path": "anchorage", "document": "TANK2016", "pages": [25, 26, 27], "field": "Anchor Bolt Results"},
+    {"path": "anchor_chair", "document": "TANK2016", "pages": [28, 29], "field": "Anchor Chair Calculations"},
+    {"path": "bottom.annular_selected_mm", "document": "MEMORY", "page": 22, "field": "Annular Base Plate Thickness"},
+    {"path": "bottom.annular_selected_width_mm", "document": "MEMORY", "page": 22, "field": "Annular Base Plate Width"},
+    {"path": "geometry.bottom_slope_percent", "document": "BOTTOM_DRAWING", "page": 1, "field": "Cortes 4 y 5"}
+  ],
+  "golden": {
+    "shell_design_mm": [24.223, 21.271, 18.320, 15.368, 12.416, 9.4649, 8.0, 8.0],
+    "shell_hydrotest_mm": [24.012, 20.880, 17.747, 14.614, 11.481, 8.3481, 8.0, 8.0],
+    "J": 2.4059,
+    "Tc_s": 7.4374,
+    "hoop_stress_kPa": [196172.81, 197885.80, 199099.03, 199413.88, 202795.31, 203915.31, 159702.84, 76349.72],
+    "anchor_combined_stress_kPa": 183034.0,
+    "chair_required_mm": 47.5179
+  }
+}

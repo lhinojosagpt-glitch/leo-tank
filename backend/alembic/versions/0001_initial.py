@@ -1,0 +1,17 @@
+"""Initial auditable project, scenario, revision, run and artifact model."""
+from alembic import op
+from app.db.session import Base
+from app.db import models  # noqa: F401
+
+revision = "0001_initial"
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    Base.metadata.create_all(op.get_bind())
+
+
+def downgrade() -> None:
+    Base.metadata.drop_all(op.get_bind())
