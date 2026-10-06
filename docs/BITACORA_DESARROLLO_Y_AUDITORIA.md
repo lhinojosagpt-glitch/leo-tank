@@ -226,7 +226,7 @@ Resultado del 2026-10-04: compilación TypeScript y Vite exitosa. Vite emitió u
 | Batch de variantes | Parcial | Cálculo y deltas listos; falta promoción persistida de variante |
 | OpenSCAD | Parcial | Genera fuente; ejecución automática de CLI queda pendiente |
 | Reportes | Terminado para MVP | Ampliar tablas/anexos para entrega formal |
-| n8n | Preparado | Falta validar contra una instancia n8n real |
+| n8n | Validado localmente | Flujo demostrativo ejecutado en n8n 1.122.4 contra TANK650 0.2.0; export versionado en `automation/n8n/` |
 
 ## 10. Limitaciones y deuda técnica conocida
 

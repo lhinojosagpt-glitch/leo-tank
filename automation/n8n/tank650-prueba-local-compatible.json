@@ -1,0 +1,123 @@
+{
+  "name": "TANK650 - Prueba local compatible",
+  "nodes": [
+    {
+      "id": "d31cd649-e67d-47af-bbc4-b6e52018a2a1",
+      "name": "Inicio manual",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [120, 300],
+      "parameters": {}
+    },
+    {
+      "id": "c80d80c1-f79f-4414-a73d-c3bfd55821b0",
+      "name": "Configurar prueba T-78",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [360, 300],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            { "id": "api-url", "name": "apiBaseUrl", "value": "http://127.0.0.1:8000", "type": "string" },
+            { "id": "variant", "name": "nombreVariante", "value": "Prueba local compatible - T78", "type": "string" },
+            { "id": "diameter", "name": "diametroNominalM", "value": 45.725, "type": "number" },
+            { "id": "height", "name": "alturaLiquidoM", "value": 18.7, "type": "number" },
+            { "id": "gravity", "name": "gravedadEspecifica", "value": 0.8778, "type": "number" },
+            { "id": "sp", "name": "aceleracionPicoG", "value": 0.45, "type": "number" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4550c730-b62a-4720-967f-a47be7e90fd0",
+      "name": "Comprobar API TANK650",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [620, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configurar prueba T-78').item.json.apiBaseUrl + '/api/v1/health' }}",
+        "authentication": "none",
+        "options": {}
+      }
+    },
+    {
+      "id": "37c8dde2-faa2-40be-903e-24e525609760",
+      "name": "Cargar datos T-78",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [880, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configurar prueba T-78').item.json.apiBaseUrl + '/api/v1/fixtures/T78_2019' }}",
+        "authentication": "none",
+        "options": {}
+      }
+    },
+    {
+      "id": "77ffb060-ad2f-465e-a2fa-159e2e1475aa",
+      "name": "Aplicar variantes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1140, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const source = $input.first().json;\nconst config = $('Configurar prueba T-78').first().json;\nconst inputs = JSON.parse(JSON.stringify(source));\n\ninputs.geometry = {\n  ...(inputs.geometry ?? {}),\n  nominal_diameter_m: Number(config.diametroNominalM),\n  design_liquid_height_m: Number(config.alturaLiquidoM),\n};\ninputs.product = {\n  ...(inputs.product ?? {}),\n  specific_gravity: Number(config.gravedadEspecifica),\n};\ninputs.seismic = {\n  ...(inputs.seismic ?? {}),\n  Sp: Number(config.aceleracionPicoG),\n};\n\nreturn [{\n  json: {\n    nombreVariante: config.nombreVariante,\n    inputs,\n  },\n}];"
+      }
+    },
+    {
+      "id": "86c79342-9b09-47ca-8da4-3c7075f937a4",
+      "name": "Ejecutar cálculo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [1400, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configurar prueba T-78').item.json.apiBaseUrl + '/api/v1/calculate' }}",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ { inputs: $json.inputs } }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "ce1b54fa-23af-43bc-8cd1-a639fae2e0e8",
+      "name": "Resumen de resultados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1660, 300],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            { "id": "overall", "name": "estadoGlobal", "value": "={{ $json.summary.overall_status }}", "type": "string" },
+            { "id": "engine", "name": "versionMotor", "value": "={{ $json.engine_version }}", "type": "string" },
+            { "id": "hash", "name": "huellaEntradas", "value": "={{ $json.input_sha256 }}", "type": "string" },
+            { "id": "j", "name": "jSismico", "value": "={{ $json.summary.seismic.J }}", "type": "number" },
+            { "id": "shell", "name": "utilizacionCascoPct", "value": "={{ $json.summary.shell.max_utilization * 100 }}", "type": "number" },
+            { "id": "hoop", "name": "utilizacionHoopPct", "value": "={{ $json.summary.seismic.max_hoop_utilization * 100 }}", "type": "number" },
+            { "id": "bolts", "name": "pernosSeleccionados", "value": "={{ $json.summary.anchorage.selected_bolts }}", "type": "number" },
+            { "id": "result", "name": "resultadoCompleto", "value": "={{ $json }}", "type": "object" }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Inicio manual": { "main": [[{ "node": "Configurar prueba T-78", "type": "main", "index": 0 }]] },
+    "Configurar prueba T-78": { "main": [[{ "node": "Comprobar API TANK650", "type": "main", "index": 0 }]] },
+    "Comprobar API TANK650": { "main": [[{ "node": "Cargar datos T-78", "type": "main", "index": 0 }]] },
+    "Cargar datos T-78": { "main": [[{ "node": "Aplicar variantes", "type": "main", "index": 0 }]] },
+    "Aplicar variantes": { "main": [[{ "node": "Ejecutar cálculo", "type": "main", "index": 0 }]] },
+    "Ejecutar cálculo": { "main": [[{ "node": "Resumen de resultados", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

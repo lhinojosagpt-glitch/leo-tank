@@ -1,5 +1,13 @@
 # n8n integration
 
+## Flujo demostrativo validado
+
+El flujo exportable se encuentra en `automation/n8n/tank650-prueba-local-compatible.json`. Fue validado el 2026-10-05 contra n8n local 1.122.4 y TANK650 ENGINE 0.2.0. Usa las versiones disponibles en esa instalación: Manual Trigger 1, Set 3.4, Code 2 y HTTP Request 4.3.
+
+La secuencia comprueba la API, carga el fixture T-78, aplica variantes de diámetro, altura de líquido, gravedad específica y aceleración pico, ejecuta `POST /api/v1/calculate` y presenta un resumen junto con la respuesta completa. La prueba integral alcanzó el nodo final con estado `PASS_WITH_MECHANICAL_ANCHORAGE`.
+
+Para importarlo, use la opción **Import from File** de n8n y seleccione el JSON versionado. La URL predeterminada es `http://127.0.0.1:8000`; debe cambiarse en `Configurar prueba T-78` cuando la API se ejecute en otra máquina.
+
 ## Workflow A - cálculo individual
 
 1. `GET /api/v1/fixtures/T78_2019`
@@ -25,4 +33,3 @@
 ```
 
 La matriz compacta retorna peso, utilizaciones, J, necesidad de anclaje y estado global, sin obligar a descargar todas las trazas.
-
