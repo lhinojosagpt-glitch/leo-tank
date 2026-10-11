@@ -10,6 +10,21 @@
       "parameters": {}
     },
     {
+      "id": "9b51dc49-f238-42d2-82f7-8e561d23ab07",
+      "name": "Conversar sobre resultados",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [120, 520],
+      "webhookId": "9ef1eae0-3415-4bf4-9e25-dbd2acdb5f15",
+      "parameters": {
+        "public": false,
+        "availableInChat": false,
+        "options": {
+          "responseMode": "lastNode"
+        }
+      }
+    },
+    {
       "id": "c80d80c1-f79f-4414-a73d-c3bfd55821b0",
       "name": "Configurar prueba T-78",
       "type": "n8n-nodes-base.set",
@@ -103,7 +118,64 @@
             { "id": "shell", "name": "utilizacionCascoPct", "value": "={{ $json.summary.shell.max_utilization * 100 }}", "type": "number" },
             { "id": "hoop", "name": "utilizacionHoopPct", "value": "={{ $json.summary.seismic.max_hoop_utilization * 100 }}", "type": "number" },
             { "id": "bolts", "name": "pernosSeleccionados", "value": "={{ $json.summary.anchorage.selected_bolts }}", "type": "number" },
+            { "id": "ai-results", "name": "resultadoTexto", "value": "={{ 'Resultados de la simulación TANK650. Estado global: ' + $json.summary.overall_status + '; versión del motor: ' + $json.engine_version + '; huella de entradas: ' + $json.input_sha256 + '; casco: ' + $json.summary.shell.status + ', utilización máxima ' + ($json.summary.shell.max_utilization * 100) + ' %; fondo: ' + $json.summary.bottom.status + '; viento: ' + $json.summary.wind.status + ', requiere anclajes ' + $json.summary.wind.anchors_required + '; sismo: ' + $json.summary.seismic.status + ', J ' + $json.summary.seismic.J + ', utilización hoop máxima ' + ($json.summary.seismic.max_hoop_utilization * 100) + ' %; autoanclaje: ' + $json.summary.auto_anchor.status + ', clasificación ' + $json.summary.auto_anchor.classification + '; anclaje mecánico requerido: ' + $json.summary.anchorage.required + ', estado ' + $json.summary.anchorage.status + ', pernos seleccionados ' + $json.summary.anchorage.selected_bolts + ', utilización máxima ' + ($json.summary.anchorage.max_utilization * 100) + ' %; peso vacío ' + $json.summary.weights.empty_N + ' N.' }}", "type": "string" },
             { "id": "result", "name": "resultadoCompleto", "value": "={{ $json }}", "type": "object" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d1ac2b24-c4c4-4e25-9b51-ac07bef33efb",
+      "name": "Preparar conversación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 300],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const data = $input.first().json;\nlet pregunta = 'Genera un resumen técnico breve de los resultados e identifica los valores que requieren mayor atención.';\n\ntry {\n  const chat = $('Conversar sobre resultados').first().json;\n  if (chat?.chatInput) pregunta = String(chat.chatInput);\n} catch (_error) {\n  // La ejecución manual no activa el Chat Trigger; se conserva la pregunta predeterminada.\n}\n\nconst systemPrompt = 'Actúa como un asistente de ingeniería estructural especializado en tanques de almacenamiento y API 650. Responde exclusivamente sobre los resultados de la simulación proporcionada. No inventes valores, no uses información externa, no modifiques resultados ni afirmes que el diseño está certificado. Distingue claramente entre PASS, FAIL, advertencias y limitaciones. Si una pregunta no puede responderse con los resultados recibidos, indica que la información no está disponible en esta simulación. Responde en español, con unidades y lenguaje técnico claro.';\nconst chatInput = `Pregunta del usuario: ${pregunta}\\n\\n${data.resultadoTexto}`;\n\nreturn [{\n  json: {\n    ...data,\n    preguntaUsuario: pregunta,\n    chatInput,\n    deepSeekRequest: {\n      model: 'deepseek-flash',\n      messages: [\n        { role: 'system', content: systemPrompt },\n        { role: 'user', content: chatInput },\n      ],\n      thinking: { type: 'disabled' },\n      max_tokens: 2000,\n      stream: false,\n    },\n  },\n}];"
+      }
+    },
+    {
+      "id": "b4793f58-7866-442c-8836-f3a381e7f33e",
+      "name": "DeepSeek Flash 4.1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [2180, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "deepSeekApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.deepSeekRequest }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "credentials": {
+        "deepSeekApi": {
+          "id": "FHH0jcnzKoPX96dU",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "id": "5c85a464-a2b4-437f-be14-0e918c16943e",
+      "name": "Respuesta del asistente",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2440, 300],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            { "id": "assistant-text", "name": "text", "value": "={{ $json.choices[0].message.content }}", "type": "string" },
+            { "id": "assistant-model", "name": "modelo", "value": "={{ $json.model }}", "type": "string" },
+            { "id": "assistant-tokens", "name": "tokensTotales", "value": "={{ $json.usage.total_tokens }}", "type": "number" }
           ]
         }
       }
@@ -111,11 +183,15 @@
   ],
   "connections": {
     "Inicio manual": { "main": [[{ "node": "Configurar prueba T-78", "type": "main", "index": 0 }]] },
+    "Conversar sobre resultados": { "main": [[{ "node": "Configurar prueba T-78", "type": "main", "index": 0 }]] },
     "Configurar prueba T-78": { "main": [[{ "node": "Comprobar API TANK650", "type": "main", "index": 0 }]] },
     "Comprobar API TANK650": { "main": [[{ "node": "Cargar datos T-78", "type": "main", "index": 0 }]] },
     "Cargar datos T-78": { "main": [[{ "node": "Aplicar variantes", "type": "main", "index": 0 }]] },
     "Aplicar variantes": { "main": [[{ "node": "Ejecutar cálculo", "type": "main", "index": 0 }]] },
-    "Ejecutar cálculo": { "main": [[{ "node": "Resumen de resultados", "type": "main", "index": 0 }]] }
+    "Ejecutar cálculo": { "main": [[{ "node": "Resumen de resultados", "type": "main", "index": 0 }]] },
+    "Resumen de resultados": { "main": [[{ "node": "Preparar conversación", "type": "main", "index": 0 }]] },
+    "Preparar conversación": { "main": [[{ "node": "DeepSeek Flash 4.1", "type": "main", "index": 0 }]] },
+    "DeepSeek Flash 4.1": { "main": [[{ "node": "Respuesta del asistente", "type": "main", "index": 0 }]] }
   },
   "settings": {
     "executionOrder": "v1"

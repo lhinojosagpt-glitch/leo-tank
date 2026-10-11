@@ -10,7 +10,7 @@ export default function AppShell() {
   const state = useTankWorkspace()
   const [navCollapsed, setNavCollapsed] = useState(false)
   const projectLabel = state.draftInputs?.project?.tank_tag || 'T-78'
-  const busyLabel = state.busyAction === 'saving' ? 'Guardando...' : state.busyAction === 'validating' ? 'Validando...' : state.busyAction === 'calculating' ? 'Calculando...' : state.busyAction === 'loading' ? 'Cargando...' : undefined
+  const busyLabel = state.busyAction === 'saving' ? 'Guardando...' : state.busyAction === 'validating' ? 'Validando...' : state.busyAction === 'calculating' ? 'Calculando...' : state.busyAction === 'reporting' ? 'Generando...' : state.busyAction === 'loading' ? 'Cargando...' : undefined
   const navigate = (module: ModuleId) => state.navigate(module)
   const groups = [...new Set(modules.map(item => item.group))]
   const completed = state.draftInputs ? 12 : 0
@@ -24,7 +24,7 @@ export default function AppShell() {
         <div><span>Perfil</span><strong>API650_12E_T78</strong></div>
         {state.dirty && <div className="top-dirty"><span>ESTADO</span><strong>● Cambios sin guardar</strong></div>}
       </div>
-      <div className="header-actions"><button className="secondary" onClick={state.saveRevision} disabled={!state.draftInputs || Boolean(state.busyAction)} title="Crear una revisión inmutable del borrador">{state.busyAction === 'saving' ? 'Guardando...' : 'Guardar revisión'}</button><button className="primary" onClick={state.calculate} disabled={!state.draftInputs || Boolean(state.busyAction)} title="Validar y ejecutar el motor de cálculo">{busyLabel || 'Calcular'}</button></div>
+      <div className="header-actions"><button className="secondary memory-action" onClick={state.downloadCalculationMemory} disabled={!state.draftInputs || Boolean(state.busyAction)} title="Recalcular y descargar la memoria de cálculo en Word">{state.busyAction === 'reporting' ? 'Generando...' : 'Memoria Word'}</button><button className="secondary" onClick={state.saveRevision} disabled={!state.draftInputs || Boolean(state.busyAction)} title="Crear una revisión inmutable del borrador">{state.busyAction === 'saving' ? 'Guardando...' : 'Guardar revisión'}</button><button className="primary" onClick={state.calculate} disabled={!state.draftInputs || Boolean(state.busyAction)} title="Validar y ejecutar el motor de cálculo">{busyLabel || 'Calcular'}</button></div>
     </header>
 
     <aside className="module-navigation panel">

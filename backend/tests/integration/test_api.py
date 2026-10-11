@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import io
+import zipfile
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -25,6 +27,23 @@ def test_direct_fixture_calculation() -> None:
     body = response.json()
     assert body["overall_status"] == "PASS_WITH_MECHANICAL_ANCHORAGE"
     assert body["summary"]["seismic"]["J"] > 1.54
+
+
+def test_dynamic_calculation_memory_is_idempotent() -> None:
+    with client:
+        fixture = client.get("/api/v1/fixtures/T78_2019").json()
+        first = client.post("/api/v1/calculation-memory", json={"inputs": fixture})
+        second = client.post("/api/v1/calculation-memory", json={"inputs": fixture})
+
+    assert first.status_code == 200
+    assert first.headers["content-type"].startswith("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    assert first.headers["x-tank650-input-sha256"] == second.headers["x-tank650-input-sha256"]
+    assert first.content == second.content
+    with zipfile.ZipFile(io.BytesIO(first.content)) as package:
+        assert "word/document.xml" in package.namelist()
+        document_xml = package.read("word/document.xml").decode("utf-8")
+    assert "Memoria de cálculo mecánico" in document_xml
+    assert "Apéndice de trazabilidad de fórmulas" in document_xml
 
 
 def test_immutable_revision_run_and_variant_batch() -> None:

@@ -15,7 +15,7 @@ El repositorio implementa el caso T-78 con separación estricta entre cálculo P
 - Verificación de placa superior de silla de anclaje.
 - Fondo central/anular, viento, viga de rigidez y pesos documentados.
 - Proyectos, escenarios, revisiones inmutables, runs y batch de variantes en SQLite.
-- API directa para n8n, exportación JSON y SCAD, y reportes HTML/PDF/JSON.
+- API directa para n8n, exportación JSON y SCAD, reportes HTML/PDF/JSON y memoria de cálculo Word regenerable desde los parámetros actuales.
 - Workspaces editables por disciplina, navegación funcional y estado de borrador/revisión/run.
 - Inspector fijo de resultados y drawer de trazas sin desplazamiento global.
 - Visor Three.js con 192 planchas seleccionables, fondo zonificado, 60 anclajes y domo geodésico representativo.

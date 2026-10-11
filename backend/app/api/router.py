@@ -21,7 +21,7 @@ from app.db.session import SessionLocal, engine
 from app.engine.common import load_fixture, unwrap
 from app.engine.runner import calculate
 from app.openscad import write_scad
-from app.reports import write_html_report, write_json_report, write_pdf_report
+from app.reports import MEMORY_FORMAT_VERSION, write_calculation_memory, write_html_report, write_json_report, write_pdf_report
 
 router = APIRouter(prefix="/api/v1")
 
@@ -69,6 +69,29 @@ def fixture() -> dict:
 @router.post("/calculate", dependencies=[Depends(write_access)])
 def direct_calculation(body: DirectCalculation) -> dict:
     return calculate(unwrap(body.inputs)).to_dict()
+
+
+@router.post("/calculation-memory", dependencies=[Depends(write_access)])
+def create_calculation_memory(body: DirectCalculation) -> FileResponse:
+    """Recalculate the submitted draft and return its deterministic Word memory."""
+    inputs = unwrap(body.inputs)
+    result = calculate(inputs).to_dict()
+    raw_tag = str(inputs.get("project", {}).get("tank_tag", "T-78"))
+    tank_tag = "".join(character if character.isalnum() or character in "-_" else "-" for character in raw_tag).strip("-") or "T-78"
+    version = MEMORY_FORMAT_VERSION.replace(".", "-")
+    filename = f"Memoria_Calculo_{tank_tag}_{result['input_sha256'][:12]}_v{version}.docx"
+    target = ROOT / "reports" / "generated" / "calculation-memories" / filename
+    write_calculation_memory(inputs, result, target)
+    return FileResponse(
+        target,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename=filename,
+        headers={
+            "ETag": f'"{result["input_sha256"]}"',
+            "X-TANK650-Input-SHA256": result["input_sha256"],
+            "X-TANK650-Engine-Version": result["engine_version"],
+        },
+    )
 
 
 @router.get("/projects")

@@ -169,6 +169,47 @@ export function useTankWorkspace() {
     } finally { setBusyAction(undefined) }
   }, [dirty, draftInputs, ids?.revisionId, notify, refreshHistory, validation])
 
+  const downloadCalculationMemory = useCallback(async () => {
+    if (!draftInputs) return
+    if (Object.keys(validation).length) {
+      notify('error', 'Corrija los datos inválidos', Object.values(validation)[0])
+      return
+    }
+    setBusyAction('reporting')
+    setStatusMessage('Recalculando y generando la memoria Word...')
+    try {
+      const response = await fetch('/api/v1/calculation-memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputs: draftInputs }),
+      })
+      if (!response.ok) {
+        let message = `HTTP ${response.status}`
+        try { const body = await response.json(); message = body.detail?.message || body.detail || message } catch { /* response was not JSON */ }
+        throw new Error(String(message))
+      }
+      const disposition = response.headers.get('Content-Disposition') || ''
+      const encodedMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+      const simpleMatch = disposition.match(/filename="?([^";]+)"?/i)
+      const filename = encodedMatch ? decodeURIComponent(encodedMatch[1]) : simpleMatch?.[1] || 'Memoria_Calculo_TANK650.docx'
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      const fingerprint = response.headers.get('X-TANK650-Input-SHA256')
+      setStatusMessage(`Memoria Word generada · ${fingerprint?.slice(0, 12) || 'huella disponible en el documento'}...`)
+      notify('success', 'Memoria de cálculo descargada', 'El documento corresponde a los parámetros actuales y contiene la trazabilidad de fórmulas.')
+    } catch (error: any) {
+      setStatusMessage(error.message)
+      notify('error', 'No se pudo generar la memoria', error.message)
+    } finally { setBusyAction(undefined) }
+  }, [draftInputs, notify, validation])
+
   const selectEntity = useCallback((entity: any) => setSelectedEntity(entity), [])
   const openTrace = useCallback((trace: any) => {
     setSelectedTrace(trace)
@@ -183,7 +224,7 @@ export function useTankWorkspace() {
   return {
     fixture, draftInputs, persistedInputs, result, activeRun, activeModule, activeMode, selectedEntity, selectedTrace,
     calculationInspector, revision, ids, history, busyAction, statusMessage, toast, dirty, dirtyChanges, validation,
-    loadExample, navigate, setActiveMode, updateInput, saveRevision, calculate, selectEntity, selectCourse, openTrace,
+    loadExample, navigate, setActiveMode, updateInput, saveRevision, calculate, downloadCalculationMemory, selectEntity, selectCourse, openTrace,
     setCalculationInspector, setToast, refreshHistory,
   }
 }

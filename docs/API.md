@@ -24,6 +24,7 @@ Base: `/api/v1`.
 - `POST /runs/{run_id}/export/scad`
 - `POST /runs/{run_id}/reports`
 - `GET /reports/{run_id}/{json|html|pdf}`
+- `POST /calculation-memory`: recibe `{ "inputs": ... }`, recalcula con el motor Python y descarga una memoria Word determinista con entradas, resultados, verificaciones y trazas de fórmulas.
 
 ## Sistema
 

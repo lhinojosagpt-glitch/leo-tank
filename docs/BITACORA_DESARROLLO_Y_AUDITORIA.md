@@ -2,7 +2,7 @@
 
 **Proyecto:** TANK650 ENGINE — caso T-78  
 **Versión documentada:** 0.2.0
-**Fecha de corte:** 2026-10-05
+**Fecha de corte:** 2026-10-11
 **Estado:** aplicación técnica v0.2 funcional, limitada al perfil congelado `API650_12E_T78`
 **Propósito de este archivo:** entregar a un revisor humano o a otra IA un punto de entrada único para reconstruir qué se desarrolló, con qué fuentes, qué se verificó y qué no debe darse por concluido.
 
@@ -16,7 +16,7 @@ Se construyó una aplicación local para reproducir y auditar el cálculo del ta
 - interfaz web clara en React/TypeScript;
 - visor geométrico en Three.js;
 - exportación paramétrica OpenSCAD;
-- reportes HTML, PDF y JSON;
+- reportes HTML, PDF y JSON, además de memoria de cálculo Word determinista;
 - pruebas doradas contra resultados del caso T-78.
 
 La aplicación se ejecuta localmente en `http://127.0.0.1:8000/`. El botón **Cargar ejemplo T-78** carga el fixture de prueba. El cálculo se ejecuta solamente al pulsar **Calcular**, permitiendo al usuario modificar antes los valores expuestos en la interfaz.
@@ -86,6 +86,15 @@ Para una auditoría portable, el usuario debe entregar también ese archivo a la
 - Se ampliaron contratos REST para revisión, geometría, resultados, trazas e historial.
 - Se ejecutaron 10 pruebas backend, 1 prueba integrada frontend y el build de producción con resultado satisfactorio.
 - Se realizó control visual de la aplicación a 1600×900 y 1920×1080.
+
+### 2026-10-11 — memoria de cálculo Word dinámica
+
+- Se tomó como referencia de organización documental `datos/5. DISEÑO MECÁNICO TANQUE T-78.pdf`, sin copiar sus resultados estáticos.
+- Se implementó un generador DOCX que consume exclusivamente el conjunto de entradas enviado y el resultado recién calculado por el motor Python.
+- La memoria incluye portada, huella SHA-256 de entradas, versión del motor y del formato, datos de diseño, resultados por disciplina, verificaciones, conclusiones y apéndice exhaustivo de trazas de fórmulas.
+- Se añadió `POST /api/v1/calculation-memory` y el botón **Memoria Word** en la barra superior. Funciona tanto sobre revisiones guardadas como sobre borradores y variantes sin guardar.
+- La salida es idempotente: el mismo conjunto de entradas y la misma versión del formato generan el mismo nombre, contenido y hash binario; un cambio de parámetros produce una huella y un documento diferentes.
+- La memoria de control T-78 se renderizó con Microsoft Word a 23 páginas A4, se inspeccionaron todas las páginas y la auditoría de accesibilidad reportó cero hallazgos.
 
 ## 4. Arquitectura implementada
 
