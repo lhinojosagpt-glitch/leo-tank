@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { displayIdentity } from '../app/displayIdentity'
 
 type Props = {
   spec?: any
@@ -31,7 +32,7 @@ export default function ModelBrowser({ spec, selected, hiddenIds, isolateId, onS
   </div>
 
   return <div className="model-browser" onClick={() => menu && setMenu(undefined)}>
-    <div className="browser-heading"><div><span>MODEL BROWSER</span><strong>{spec.tank_tag}</strong></div>{isolateId && <button onClick={() => onIsolate(undefined)}>Mostrar todo</button>}</div>
+    <div className="browser-heading"><div><span>MODEL BROWSER</span><strong>{displayIdentity(spec.tank_tag)}</strong></div>{isolateId && <button onClick={() => onIsolate(undefined)}>Mostrar todo</button>}</div>
     <div className="tree-scroll">
       {row({ id: 'shell', entity_type: 'shell', name: 'Shell' }, `Shell · ${spec.courses.length} cursos`, 0, true, expanded.has('shell'))}
       {expanded.has('shell') && spec.courses.map((course: any) => <div key={course.id}>

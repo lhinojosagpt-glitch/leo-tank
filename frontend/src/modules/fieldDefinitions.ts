@@ -17,8 +17,8 @@ const f = (path: string, label: string, symbol: string, unit: string, source: st
 
 export const fieldsByModule: Partial<Record<ModuleId, FieldDef[]>> = {
   project: [
-    f('project.name', 'Nombre del proyecto', '', '', 'Fixture T-78', { type: 'text' }),
-    f('project.tank_tag', 'Tag del tanque', '', '', 'Planos T-78', { type: 'text' }),
+    f('project.name', 'Nombre del proyecto', '', '', 'Fixture T-160MB', { type: 'text' }),
+    f('project.tank_tag', 'Tag del tanque', '', '', 'Planos T-160MB', { type: 'text' }),
     f('project.client', 'Cliente', '', '', 'Memoria de cálculo', { type: 'text' }),
     f('project.location', 'Ubicación', '', '', 'Memoria de cálculo', { type: 'text' }),
   ],
@@ -86,7 +86,7 @@ export const fieldsByModule: Partial<Record<ModuleId, FieldDef[]>> = {
     f('wind.resisting_moment_Nm', 'Momento resistente', 'Mr', 'N·m', 'TANK 2016 - reconstrucción', { kind: 'REFERENCE VALUE' }),
   ],
   seismic: [
-    f('seismic.Sp', 'Aceleración pico', 'Sp', 'g', 'TANK 2016 - pág. 11', { step: '0.01', help: 'Peak ground acceleration used by the frozen T-78 profile.' }),
+    f('seismic.Sp', 'Aceleración pico', 'Sp', 'g', 'TANK 2016 - pág. 11', { step: '0.01', help: 'Peak ground acceleration used by the frozen T-160MB profile.' }),
     f('seismic.site_class', 'Clase de sitio', '', '', 'TANK 2016 - pág. 11', { type: 'text' }),
     f('seismic.seismic_use_group', 'Grupo de uso sísmico', 'SUG', '-', 'TANK 2016 - pág. 11'),
     f('seismic.Fa', 'Coeficiente de período corto', 'Fa', '-', 'TANK 2016 - pág. 11'),
@@ -103,7 +103,7 @@ export const fieldsByModule: Partial<Record<ModuleId, FieldDef[]>> = {
     f('seismic.required_freeboard_m', 'Freeboard requerido', 'hfr', 'm', 'TANK 2016', { kind: 'REFERENCE VALUE' }),
   ],
   roof: [
-    f('roof.physical_roof.type', 'Tipo físico', '', '', 'Proyecto T-78', { type: 'text', readOnly: true, kind: 'REFERENCE VALUE' }),
+    f('roof.physical_roof.type', 'Tipo físico', '', '', 'Proyecto T-160MB', { type: 'text', readOnly: true, kind: 'REFERENCE VALUE' }),
     f('roof.physical_roof.design_scope', 'Alcance estructural', '', '', 'Proveedor', { type: 'text', readOnly: true, kind: 'REFERENCE VALUE' }),
     f('roof.analysis_roof.type', 'Modelo sustituto', '', '', 'Reconstrucción TANK 2016', { type: 'text', readOnly: true, kind: 'REFERENCE VALUE' }),
     f('roof.analysis_roof.material', 'Material sustituto', '', '', 'TANK 2016', { type: 'text' }),

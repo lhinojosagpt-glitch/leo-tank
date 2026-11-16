@@ -96,7 +96,7 @@ export default function TankViewer({ spec, selected, hiddenIds = new Set(), isol
         const anythingSelected = Boolean(selected?.id)
         const dimmed = anythingSelected && !plateSelected && !courseSelected
         const color = colorMode === 'utilization' ? utilizationColor(plate.utilization) : colorMode === 'material' ? materialColor(plate.material) : thicknessColor(plate.thickness_mm)
-        if (plateSelected || courseSelected) color.lerp(new THREE.Color('#ec9f36'), plateSelected ? 0.8 : 0.48)
+        if (plateSelected || courseSelected) color.lerp(new THREE.Color('#1466C3'), plateSelected ? 0.8 : 0.48)
         const visualThickness = Math.max(plate.thickness_mm / 1000 * visualScale, 0.075)
         const geometry = new THREE.CylinderGeometry(radius + visualThickness, radius + visualThickness, plate.height_m - 0.018, 8, 1, true, THREE.MathUtils.degToRad(plate.start_angle_deg), THREE.MathUtils.degToRad(plate.angle_deg - 0.08))
         const material = new THREE.MeshStandardMaterial({ color, roughness: 0.58, metalness: 0.22, transparent: true, opacity: dimmed ? 0.14 : baseOpacity, side: THREE.DoubleSide, clippingPlanes: clipping })
@@ -107,7 +107,7 @@ export default function TankViewer({ spec, selected, hiddenIds = new Set(), isol
         tankGroup.add(mesh)
         pickables.push(mesh)
         if (displayMode === 'edges' || plateSelected || courseSelected) {
-          const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 5), new THREE.LineBasicMaterial({ color: plateSelected ? '#ff8a1d' : courseSelected ? '#e8a547' : '#315d6c', transparent: true, opacity: dimmed ? 0.12 : 0.9, clippingPlanes: clipping }))
+          const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry, 5), new THREE.LineBasicMaterial({ color: plateSelected ? '#1466C3' : courseSelected ? '#5b91d3' : '#315d6c', transparent: true, opacity: dimmed ? 0.12 : 0.9, clippingPlanes: clipping }))
           edges.position.copy(mesh.position)
           tankGroup.add(edges)
         }

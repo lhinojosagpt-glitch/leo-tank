@@ -35,4 +35,7 @@
 - Fondo zonificado y domo geodésico representativo: **DONE**.
 - Diseño estructural de domo del proveedor: **NOT_IMPLEMENTED**, fuera del alcance demostrado.
 - Validación visual 1600×900 y 1920×1080: **DONE**.
-- Backend: **10 pruebas pasan**. Frontend: **1 flujo integrado pasa**. Build: **DONE** con advertencia de tamaño de bundle.
+- Backend: **13 pruebas pasan**. Frontend: **2 pruebas integradas pasan**. Build: **DONE** con advertencia de tamaño de bundle.
+# Version 2.0
+
+The deterministic Design Assistant, capability-driven workspaces, complete check inspector, active-run context, stale-result warning, V2 palette, persistence/API surface and acceptance tests are implemented. See `V2_ACCEPTANCE_REPORT.md` for release evidence and `V2_DESIGN_ASSISTANT.md` for engineering safety boundaries.

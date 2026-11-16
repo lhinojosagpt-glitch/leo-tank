@@ -4,12 +4,11 @@ import io
 import zipfile
 from uuid import uuid4
 
-from fastapi.testclient import TestClient
-
 from app.main import app
+from tests.asgi_client import ASGITestClient
 
 
-client = TestClient(app)
+client = ASGITestClient(app)
 
 
 def test_health() -> None:

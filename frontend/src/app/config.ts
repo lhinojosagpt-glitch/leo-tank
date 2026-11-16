@@ -1,4 +1,10 @@
 export type ModuleId = 'overview' | 'project' | 'code' | 'geometry' | 'product' | 'materials' | 'shell' | 'bottom' | 'wind' | 'seismic' | 'roof' | 'anchorage' | 'review' | 'results' | 'variants' | 'history'
+export type WorkspaceMode = 'inputs' | 'results' | 'checks'
+
+export const moduleCapabilities: Partial<Record<ModuleId, WorkspaceMode[]>> = {
+  project: ['inputs'], code: ['inputs'], geometry: ['inputs'], product: ['inputs'], materials: ['inputs'], roof: ['inputs'],
+  shell: ['inputs', 'results', 'checks'], bottom: ['inputs', 'results', 'checks'], wind: ['inputs', 'results', 'checks'], seismic: ['inputs', 'results', 'checks'], anchorage: ['inputs', 'results', 'checks'],
+}
 
 export const modules: Array<{ id: ModuleId; label: string; group: string; icon: string; route: string }> = [
   { id: 'overview', label: 'Inicio', group: 'Proyecto', icon: '⌂', route: 'overview' },
@@ -20,7 +26,7 @@ export const modules: Array<{ id: ModuleId; label: string; group: string; icon: 
 ]
 
 export const moduleMeta: Record<ModuleId, { title: string; eyebrow: string; description: string }> = {
-  overview: { title: 'Centro de diseño T-78', eyebrow: 'PROYECTO', description: 'Estado del modelo, revisión activa y accesos de ingeniería.' },
+  overview: { title: 'Centro de diseño T-160MB', eyebrow: 'PROYECTO', description: 'Estado del modelo, revisión activa y accesos de ingeniería.' },
   project: { title: 'Datos del proyecto', eyebrow: 'IDENTIFICACIÓN', description: 'Identificación, cliente, ubicación y notas del tanque.' },
   code: { title: 'Código y capacidades', eyebrow: 'PERFIL NORMATIVO', description: 'Alcance congelado, edición y madurez de cálculo.' },
   geometry: { title: 'Geometría del tanque', eyebrow: 'MODELO FÍSICO', description: 'Dimensiones principales y navegador de entidades.' },

@@ -14,9 +14,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import ENGINE_VERSION
-from app.api.schemas import DirectCalculation, ProjectCreate, RevisionCreate, ScenarioCreate, VariantBatchRequest
+from app.api.schemas import ApplyRecommendationRequest, DesignStudyRequest, DirectCalculation, ProjectCreate, RevisionCreate, ScenarioCreate, VariantBatchRequest
+from app.assistant import analyze_run, execute_study
 from app.config import API_KEY, ROOT
-from app.db.models import AuditEvent, CalculationRun, DesignScenario, Project, ScenarioRevision, VariantBatch
+from app.db.models import AuditEvent, CalculationRun, DesignScenario, DesignStudy, DesignStudyVariant, Project, ScenarioRevision, VariantBatch
 from app.db.session import SessionLocal, engine
 from app.engine.common import load_fixture, unwrap
 from app.engine.runner import calculate
@@ -251,6 +252,150 @@ def get_checks(run_id: str, db: Session = Depends(session)) -> dict:
     if run is None:
         raise HTTPException(404, "Run not found")
     return {name: module.get("checks", []) for name, module in run.result_json.get("modules", {}).items()}
+
+
+@router.get("/capabilities/modules")
+def module_capabilities() -> dict:
+    calculated = {"shell", "bottom", "wind", "seismic", "anchorage"}
+    configured = {"project", "code", "geometry", "product", "materials", "roof"}
+    return {
+        name: {"inputs": True, "results": name in calculated, "checks": name in calculated, "properties": True}
+        for name in calculated | configured
+    }
+
+
+@router.post("/runs/{run_id}/design-assistant/analyze")
+def analyze_design(run_id: str, db: Session = Depends(session)) -> dict:
+    run = db.get(CalculationRun, run_id)
+    if run is None:
+        raise HTTPException(404, "Run not found")
+    revision = db.get(ScenarioRevision, run.revision_id)
+    if revision is None:
+        raise HTTPException(404, "Baseline revision not found")
+    return {"source_run_id": run.id, **analyze_run(run.result_json, unwrap(revision.input_json))}
+
+
+@router.post("/runs/{run_id}/design-assistant/studies", dependencies=[Depends(write_access)])
+def create_design_study(run_id: str, body: DesignStudyRequest, db: Session = Depends(session)) -> dict:
+    source = db.get(CalculationRun, run_id)
+    if source is None:
+        raise HTTPException(404, "Run not found")
+    revision = db.get(ScenarioRevision, source.revision_id)
+    if revision is None:
+        raise HTTPException(404, "Baseline revision not found")
+    try:
+        analysis = analyze_run(source.result_json, unwrap(revision.input_json))
+        target = next(row for row in analysis["failed_checks"] if row["check_id"] == body.check_id)
+    except (KeyError, StopIteration):
+        raise HTTPException(422, "Target check is not a failed check in the source run")
+    allowed_ids = {row["id"] for row in target["adjustable_variables"]}
+    requested = body.variables or sorted(allowed_ids)
+    if any(variable not in allowed_ids for variable in requested):
+        raise HTTPException(422, "Study contains a fixed, derived, standard-defined, or unrelated variable")
+    study = DesignStudy(
+        source_run_id=source.id,
+        baseline_revision_id=revision.id,
+        target_check_id=body.check_id,
+        objective=body.objective,
+        target_utilization=body.target_utilization,
+        variables_json=requested[:3],
+        search_space_json={"max_simulations": body.max_simulations, "variables": target["adjustable_variables"]},
+        status="RUNNING",
+        engine_version=source.engine_version,
+        standard_profile=source.standard_profile,
+    )
+    db.add(study)
+    db.flush()
+    candidates = execute_study(unwrap(revision.input_json), body.check_id, requested, body.target_utilization, body.max_simulations)
+    passing_count = 0
+    for index, candidate in enumerate(candidates, start=1):
+        result = candidate["result"]
+        candidate_run = CalculationRun(
+            revision_id=revision.id,
+            status="COMPLETED",
+            engine_version=result["engine_version"],
+            standard_profile=result["standard_profile"],
+            input_sha256=result["input_sha256"],
+            result_json=result,
+            completed_at=datetime.now(timezone.utc),
+        )
+        db.add(candidate_run)
+        db.flush()
+        passing_count += int(candidate["passing"])
+        db.add(DesignStudyVariant(
+            study_id=study.id,
+            candidate_run_id=candidate_run.id,
+            rank=index,
+            changes_json=candidate["changes"],
+            values_tested_json=candidate["values_tested"],
+            result_json={"target_check": candidate["check"], "overall_status": result["overall_status"], "summary": result["summary"]},
+            passing=candidate["passing"],
+            score=candidate["score"],
+        ))
+    study.status = "COMPLETED"
+    first_passing = next((row for row in candidates if row["passing"]), None)
+    first_index = candidates.index(first_passing) if first_passing else -1
+    current_value = target["adjustable_variables"][0]["current_value"] if target["adjustable_variables"] else None
+    engineering_selected = next(iter(first_passing["values_tested"].values()), None) if first_passing else None
+    failed_values = [next(iter(row["values_tested"].values()), None) for row in candidates if not row["passing"]]
+    lower_boundary = max((value for value in failed_values if isinstance(value, (int, float)) and (engineering_selected is None or value < engineering_selected)), default=current_value)
+    study.summary_json = {
+        "target_check": body.check_id,
+        "current_status": "FAIL",
+        "overall_design_status": source.result_json.get("overall_status"),
+        "candidate_count": len(candidates),
+        "passing_candidates": passing_count,
+        "minimum_change_candidate": next((index for index, row in enumerate(candidates, 1) if row["passing"]), None),
+        "lowest_weight_candidate": None,
+        "threshold": {"current_value": current_value, "first_passing_value": engineering_selected, "boundary_estimate": (lower_boundary + engineering_selected) / 2 if isinstance(lower_boundary, (int, float)) and isinstance(engineering_selected, (int, float)) else None, "engineering_selected_value": engineering_selected},
+    }
+    _audit(db, "DESIGN_STUDY_COMPLETED", "design_study", study.id, {"source_run_id": source.id, **study.summary_json})
+    db.commit()
+    return {"study_id": study.id, "status": study.status, "summary": study.summary_json}
+
+
+def _study_or_404(study_id: str, db: Session) -> DesignStudy:
+    study = db.get(DesignStudy, study_id)
+    if study is None:
+        raise HTTPException(404, "Design study not found")
+    return study
+
+
+@router.get("/design-studies/{study_id}")
+def get_design_study(study_id: str, db: Session = Depends(session)) -> dict:
+    study = _study_or_404(study_id, db)
+    return {"id": study.id, "source_run_id": study.source_run_id, "baseline_revision_id": study.baseline_revision_id, "target_check_id": study.target_check_id, "objective": study.objective, "target_utilization": study.target_utilization, "variables": study.variables_json, "search_space": study.search_space_json, "status": study.status, "summary": study.summary_json, "engine_version": study.engine_version, "standard_profile": study.standard_profile}
+
+
+@router.get("/design-studies/{study_id}/variants")
+def get_design_study_variants(study_id: str, db: Session = Depends(session)) -> dict:
+    _study_or_404(study_id, db)
+    rows = db.scalars(select(DesignStudyVariant).where(DesignStudyVariant.study_id == study_id).order_by(DesignStudyVariant.rank)).all()
+    return {"study_id": study_id, "variants": [{"id": row.id, "candidate_run_id": row.candidate_run_id, "rank": row.rank, "changes": row.changes_json, "values_tested": row.values_tested_json, "result": row.result_json, "passing": row.passing, "score": row.score} for row in rows]}
+
+
+@router.get("/design-studies/{study_id}/recommendations")
+def get_design_study_recommendations(study_id: str, db: Session = Depends(session)) -> dict:
+    _study_or_404(study_id, db)
+    rows = db.scalars(select(DesignStudyVariant).where(DesignStudyVariant.study_id == study_id, DesignStudyVariant.passing.is_(True)).order_by(DesignStudyVariant.rank)).all()
+    source = db.get(CalculationRun, _study_or_404(study_id, db).source_run_id)
+    source_weight = source.result_json.get("summary", {}).get("weights", {}).get("empty_N", 0) if source else 0
+    return {"study_id": study_id, "recommendations": [{"id": row.id, "candidate_run_id": row.candidate_run_id, "rank": row.rank, "changes": row.changes_json, "values_tested": row.values_tested_json, "target_check": row.result_json.get("target_check"), "overall_status": row.result_json.get("overall_status"), "weight_delta_N": row.result_json.get("summary", {}).get("weights", {}).get("empty_N", 0) - source_weight, "score": row.score, "label": "MINIMUM CHANGE" if row == rows[0] else "PASSING ALTERNATIVE"} for row in rows]}
+
+
+@router.post("/design-studies/{study_id}/recommendations/{recommendation_id}/apply", dependencies=[Depends(write_access)])
+def apply_design_recommendation(study_id: str, recommendation_id: str, body: ApplyRecommendationRequest, db: Session = Depends(session)) -> dict:
+    study = _study_or_404(study_id, db)
+    row = db.get(DesignStudyVariant, recommendation_id)
+    if row is None or row.study_id != study.id or not row.passing:
+        raise HTTPException(404, "Passing recommendation not found")
+    selected = set(body.selected_variables or [])
+    changes = row.changes_json
+    if selected:
+        changes = {path: value for path, value in changes.items() if path in selected or ("bottom.annular_selected_mm" in selected and path == "bottom.annular_effective_thickness_mm")}
+    _audit(db, "DESIGN_RECOMMENDATION_USED_AS_DRAFT", "design_study_variant", row.id, {"changes": changes, "partial": bool(selected)})
+    db.commit()
+    return {"study_id": study.id, "recommendation_id": row.id, "base_revision_id": study.baseline_revision_id, "draft_changes": changes, "requires_recalculation": True, "original_revision_unchanged": True}
 
 
 @router.post("/variant-batches", dependencies=[Depends(write_access)])

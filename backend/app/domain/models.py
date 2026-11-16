@@ -36,6 +36,12 @@ class AcceptanceCheck:
     status: Status
     standard_reference: str
     message: str
+    module: str = ""
+    short_title: str = ""
+    description: str = ""
+    formula_id: str | None = None
+    related_entity: str | None = None
+    fail_classification: str | None = None
 
 
 @dataclass

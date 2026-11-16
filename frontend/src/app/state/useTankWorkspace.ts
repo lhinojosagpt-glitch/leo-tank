@@ -3,6 +3,7 @@ import { diffInputs, setAtPath } from '../../modules/fieldDefinitions'
 import type { ModuleId } from '../config'
 import { moduleFromPath, modules } from '../config'
 import type { ToastState } from '../../shared/Toast'
+import { applyProjectIdentity, DISPLAY_TANK_TAG } from '../displayIdentity'
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value))
 
@@ -29,6 +30,7 @@ export function useTankWorkspace() {
   const [selectedEntity, setSelectedEntity] = useState<any>({ entityType: 'shell_course', id: 'course-1', name: 'Course 1', course: 1 })
   const [selectedTrace, setSelectedTrace] = useState<any>()
   const [calculationInspector, setCalculationInspector] = useState({ open: false, pinned: false, maximized: false })
+  const [designResolution, setDesignResolution] = useState<{ open: boolean; check?: any }>({ open: false })
   const [revision, setRevision] = useState(0)
   const [ids, setIds] = useState<StoredIds | undefined>(() => {
     try { return JSON.parse(localStorage.getItem('tank650.ids') || 'null') || undefined } catch { return undefined }
@@ -67,16 +69,17 @@ export function useTankWorkspace() {
   const loadExample = useCallback(async (quiet = false) => {
     setBusyAction('loading')
     try {
-      const value = await api('/api/v1/fixtures/T78_2019')
+      const value = applyProjectIdentity(await api('/api/v1/fixtures/T78_2019'))
       setFixture(value)
       setDraftInputs(clone(value))
       setPersistedInputs(undefined)
       setResult(undefined)
       setActiveRun(undefined)
+      localStorage.removeItem('tank650.activeRun')
       setRevision(0)
       setSelectedTrace(undefined)
-      setStatusMessage('Fixture T78_2019 cargado. Guarde R1 o calcule un borrador.')
-      if (!quiet) notify('success', 'Ejemplo T-78 cargado', 'Todos los módulos de entrada están disponibles.')
+      setStatusMessage(`Ejemplo ${DISPLAY_TANK_TAG} cargado. Guarde R1 o calcule un borrador.`)
+      if (!quiet) notify('success', `Ejemplo ${DISPLAY_TANK_TAG} cargado`, 'Todos los módulos de entrada están disponibles.')
     } catch (error: any) {
       setStatusMessage(error.message)
       notify('error', 'No se pudo cargar el ejemplo', error.message)
@@ -158,6 +161,7 @@ export function useTankWorkspace() {
       }
       setResult(value)
       setActiveRun(run)
+      if (run.persisted) localStorage.setItem('tank650.activeRun', JSON.stringify(run))
       const firstTrace = value.modules?.shell?.traces?.[0]
       if (firstTrace) setSelectedTrace(firstTrace)
       setStatusMessage(`${run.persisted ? 'Run inmutable' : 'Cálculo de borrador'} completado · ${value.input_sha256.slice(0, 12)}...`)
@@ -211,6 +215,12 @@ export function useTankWorkspace() {
   }, [draftInputs, notify, validation])
 
   const selectEntity = useCallback((entity: any) => setSelectedEntity(entity), [])
+  const openDesignResolution = useCallback((check: any) => setDesignResolution({ open: true, check }), [])
+  const applyDraftChanges = useCallback((changes: Record<string, any>) => {
+    setDraftInputs((current: any) => Object.entries(changes).reduce((next, [path, value]) => setAtPath(next, path, value), current))
+    setStatusMessage(`Alternativa aplicada al borrador · ${Object.keys(changes).length} cambio(s) · recálculo obligatorio.`)
+    notify('info', 'Alternativa aplicada como borrador', 'El run original permanece inmutable. Recalcule antes de evaluar el estado.')
+  }, [notify])
   const openTrace = useCallback((trace: any) => {
     setSelectedTrace(trace)
     setCalculationInspector(current => ({ ...current, open: true }))
@@ -223,8 +233,9 @@ export function useTankWorkspace() {
 
   return {
     fixture, draftInputs, persistedInputs, result, activeRun, activeModule, activeMode, selectedEntity, selectedTrace,
-    calculationInspector, revision, ids, history, busyAction, statusMessage, toast, dirty, dirtyChanges, validation,
-    loadExample, navigate, setActiveMode, updateInput, saveRevision, calculate, downloadCalculationMemory, selectEntity, selectCourse, openTrace,
-    setCalculationInspector, setToast, refreshHistory,
+    calculationInspector, designResolution, revision, ids, history, busyAction, statusMessage, toast, dirty, dirtyChanges, validation,
+    resultsStale: Boolean(result && dirty),
+    loadExample, navigate, setActiveMode, updateInput, saveRevision, calculate, downloadCalculationMemory, selectEntity, selectCourse, openTrace, openDesignResolution, applyDraftChanges,
+    setCalculationInspector, setDesignResolution, setToast, refreshHistory,
   }
 }

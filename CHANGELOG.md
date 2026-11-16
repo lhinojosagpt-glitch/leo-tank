@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0 - 2026-10-11
+
+- Added a deterministic, auditable Design Assistant with persisted studies and real candidate runs.
+- Added failure classification, explanations, threshold metadata, full/partial draft adoption and API/n8n-ready endpoints.
+- Removed meaningless universal tabs and corrected run/result context across workspaces.
+- Corrected orphan check percentages by rendering complete check identity and engineering measures.
+- Applied the blue/white/neutral V2 system and blue Three.js selection while retaining semantic status colors.
+
 ## 0.2.0 - 2026-10-05
 
 - Se sustituyó la página vertical por un shell de aplicación técnica con navegación modular, paneles internos e inspector fijo.

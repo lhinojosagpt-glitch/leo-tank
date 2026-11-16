@@ -4,6 +4,10 @@
 
 El flujo exportable se encuentra en `automation/n8n/tank650-prueba-local-compatible.json`. Fue validado el 2026-10-05 contra n8n local 1.122.4 y TANK650 ENGINE 0.2.0. Usa las versiones disponibles en esa instalación: Manual Trigger 1, Set 3.4, Code 2 y HTTP Request 4.3.
 
+## Design Assistant V2 desde n8n
+
+La lógica reside enteramente en el backend y no depende de la GUI. Un flujo puede encadenar: obtener/crear un run → `POST /runs/{run_id}/design-assistant/analyze` → crear el estudio → consultar variantes y recomendaciones → seleccionar externamente → solicitar el changeset de borrador → crear explícitamente una revisión → calcular → generar la memoria. Cada alternativa conserva `candidate_run_id`; n8n o un modelo conversacional pueden explicar y comparar los resultados, pero no pueden alterar el cumplimiento calculado.
+
 La secuencia comprueba la API, carga el fixture T-78, aplica variantes de diámetro, altura de líquido, gravedad específica y aceleración pico, ejecuta `POST /api/v1/calculate` y presenta un resumen junto con la respuesta completa. Al final, una cadena LLM conectada al modelo `deepseek-flash` genera una lectura técnica restringida a los resultados recibidos. Requiere una credencial n8n de tipo `DeepSeek API`. La prueba integral del cálculo alcanzó el estado `PASS_WITH_MECHANICAL_ANCHORAGE`.
 
 El flujo ofrece dos entradas: `Inicio manual` genera un resumen automático y `Conversar sobre resultados` habilita la interfaz de chat de n8n. Cada pregunta del chat ejecuta nuevamente el cálculo, convierte el resumen a texto plano y lo adjunta a la pregunta antes de llamar a DeepSeek. La llamada usa Chat Completions con `thinking.type=disabled`, ya que el nodo DeepSeek incluido en n8n 1.122.4 no expone ese control para V4.1 Flash y puede devolver el contenido visible vacío. `Respuesta del asistente` publica la respuesta en el campo `text`, que consume la interfaz de chat. Esta versión no conserva memoria semántica entre preguntas; cada respuesta se basa en la pregunta actual y en la simulación recién ejecutada.

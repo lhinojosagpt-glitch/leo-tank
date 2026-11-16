@@ -303,3 +303,9 @@ La auditoría no debería considerarse cerrada hasta que:
 ---
 
 Esta bitácora describe el estado observado del repositorio en la fecha de corte. No afirma certificación normativa ni sustituye el juicio profesional requerido para diseño, fabricación o puesta en servicio del tanque.
+
+## 14. Actualización TANK650 ENGINE 2.0 — asistente de resolución
+
+Se incorporó un asistente determinista para analizar verificaciones `FAIL`, identificar variables editables y condiciones fijas, ejecutar variantes reales con el mismo motor Python y persistir cada alternativa como `CalculationRun`. Las recomendaciones solo se presentan como solución cuando el motor devuelve `PASS`; un resultado `REVIEW` no se promociona artificialmente. La aplicación permite adoptar todos o parte de los cambios como borrador y exige recalcular, sin modificar la revisión original.
+
+La interfaz fue auditada por capacidades para retirar pestañas sin contenido, completar la identidad y magnitudes de las verificaciones, mantener visible el contexto de proyecto/revisión/run y aplicar la paleta V2 azul, gris y blanco. El alcance, API, persistencia, límites normativos y evidencias de prueba quedan detallados en `V2_DESIGN_ASSISTANT.md`, `V2_UI_AUDIT.md`, `V2_COLOR_SYSTEM.md` y `V2_ACCEPTANCE_REPORT.md`.

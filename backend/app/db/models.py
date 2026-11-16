@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -94,4 +94,35 @@ class AuditEvent(Base):
     entity_type: Mapped[str] = mapped_column(String(80))
     entity_id: Mapped[str] = mapped_column(String(36), index=True)
     payload_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class DesignStudy(Base):
+    __tablename__ = "design_studies"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_id)
+    source_run_id: Mapped[str] = mapped_column(ForeignKey("calculation_runs.id"), index=True)
+    baseline_revision_id: Mapped[str] = mapped_column(ForeignKey("scenario_revisions.id"), index=True)
+    target_check_id: Mapped[str] = mapped_column(String(120), index=True)
+    objective: Mapped[str] = mapped_column(String(60), default="MINIMUM_CHANGE_PASS")
+    target_utilization: Mapped[float] = mapped_column(Float, default=1.0)
+    variables_json: Mapped[list[str]] = mapped_column(JSON, default=list)
+    search_space_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(40), default="CREATED")
+    engine_version: Mapped[str] = mapped_column(String(40))
+    standard_profile: Mapped[str] = mapped_column(String(80))
+    summary_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class DesignStudyVariant(Base):
+    __tablename__ = "design_study_variants"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_id)
+    study_id: Mapped[str] = mapped_column(ForeignKey("design_studies.id"), index=True)
+    candidate_run_id: Mapped[str] = mapped_column(ForeignKey("calculation_runs.id"), index=True)
+    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    changes_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    values_tested_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    result_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    passing: Mapped[bool] = mapped_column(Boolean, default=False)
+    score: Mapped[float] = mapped_column(Float, default=0.0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

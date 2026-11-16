@@ -36,6 +36,18 @@ class VariantBatchRequest(BaseModel):
     variants: list[VariantSpec]
 
 
+class DesignStudyRequest(BaseModel):
+    check_id: str
+    objective: str = "MINIMUM_CHANGE_PASS"
+    variables: list[str] = Field(default_factory=list)
+    target_utilization: float = Field(default=1.0, gt=0, le=1.0)
+    max_simulations: int = Field(default=500, ge=1, le=500)
+
+
+class ApplyRecommendationRequest(BaseModel):
+    selected_variables: list[str] | None = None
+
+
 class ORMModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

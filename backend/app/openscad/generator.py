@@ -15,7 +15,7 @@ def render_scad(spec: dict) -> str:
     roof = spec.get("physical_roof", {})
     roof_height = roof.get("cap_height_m", spec["nominal_diameter_m"] * 0.12) * 1000
     shell_height = spec["shell_height_m"] * 1000
-    return f'''// TANK650 ENGINE v0.2 parametric model - generated, do not hand edit
+    return f'''// TANK650 ENGINE v2.0 parametric model - generated, do not hand edit
 // Plate seams and roof framing are representative visualization geometry.
 $fn = 180;
 tank_radius = {spec['nominal_diameter_m'] * 500:.3f};

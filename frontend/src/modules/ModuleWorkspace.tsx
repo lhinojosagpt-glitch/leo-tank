@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import type { ModuleId } from '../app/config'
-import { moduleMeta } from '../app/config'
+import { moduleCapabilities, moduleMeta } from '../app/config'
 import { fieldsByModule, getAtPath, type FieldDef } from './fieldDefinitions'
 import ModelBrowser from '../viewer/ModelBrowser'
 import TankViewer from '../viewer/TankViewer'
 import Status from '../shared/Status'
+import { DISPLAY_PROFILE, DISPLAY_TANK_TAG, displayIdentity } from '../app/displayIdentity'
 
 type Props = {
   state: any
@@ -14,10 +15,11 @@ type Props = {
 
 function Field({ field, value, error, onChange }: { field: FieldDef; value: any; error?: string; onChange: (value: any) => void }) {
   const id = field.path.replaceAll('.', '-')
+  const displayValue = typeof value === 'string' ? displayIdentity(value) : value
   return <label className={`engineering-field ${field.readOnly ? 'readonly' : ''} ${error ? 'invalid' : ''}`} htmlFor={id}>
-    <div><span>{field.label}</span>{field.symbol && <button type="button" className="symbol" title={field.help || field.label}>{field.symbol}</button>}<em>{field.kind}</em></div>
-    <div className="field-control"><input id={id} type={field.type || 'number'} step={field.step} value={value ?? ''} readOnly={field.readOnly} onChange={event => onChange(field.type === 'text' ? event.target.value : Number(event.target.value))} /><b>{field.unit}</b></div>
-    <small>Fuente: {field.source}</small>
+    <div><span>{field.label}</span>{field.symbol && <button type="button" className="symbol" title={displayIdentity(field.help || field.label)}>{field.symbol}</button>}<em>{field.kind}</em></div>
+    <div className={`field-control ${typeof displayValue === 'string' && displayValue.length > 17 ? 'long-value' : ''}`}><input id={id} type={field.type || 'number'} step={field.step} value={displayValue ?? ''} title={typeof displayValue === 'string' ? displayValue : undefined} readOnly={field.readOnly} onChange={event => onChange(field.type === 'text' ? event.target.value : Number(event.target.value))} />{field.unit && <b>{field.unit}</b>}</div>
+    <small>Fuente: {displayIdentity(field.source)}</small>
     {error && <p>{error}</p>}
   </label>
 }
@@ -69,13 +71,13 @@ function ResultValues({ state, module }: { state: any; module: ModuleId }) {
 }
 
 function ChecksView({ state, module }: { state: any; module: ModuleId }) {
-  const checks = state.result?.modules?.[module]?.checks || []
+  const checks = [...(state.result?.modules?.[module]?.checks || [])].sort((a: any, b: any) => (b.utilization || 0) - (a.utilization || 0))
   if (!checks.length) return <div className="workspace-empty"><strong>Sin verificaciones disponibles</strong><span>Ejecute el cálculo o seleccione un módulo con checks.</span></div>
-  return <div className="checks-workspace">{checks.map((check: any) => <article key={check.check_id}><div><span className="section-label">{check.reference}</span><h3>{check.name}</h3><p>{check.note}</p></div><div className="check-measures"><span>Demanda <b>{check.demand.toLocaleString('en-US', { maximumFractionDigits: 4 })} {check.unit}</b></span><span>Capacidad <b>{check.capacity.toLocaleString('en-US', { maximumFractionDigits: 4 })} {check.unit}</b></span><span>Utilización <b>{(check.utilization * 100).toFixed(2)}%</b></span><Status value={check.status} /></div></article>)}</div>
+  return <div className="checks-workspace">{checks.map((check: any) => <article key={check.check_id} className={check.status === 'FAIL' ? 'failed-check' : ''} onClick={() => check.status === 'FAIL' ? state.openDesignResolution(check) : undefined}><div><span className="section-label">{check.standard_reference}</span><h3>{check.title}</h3><p>{check.description || check.message}</p></div><div className="check-measures"><span>Demanda <b>{check.demand?.toLocaleString('en-US', { maximumFractionDigits: 4 })} {check.unit}</b></span><span>Capacidad <b>{check.capacity?.toLocaleString('en-US', { maximumFractionDigits: 4 })} {check.unit}</b></span><span>Utilización <b title={`Raw utilization: ${check.utilization}`}>{check.utilization == null ? '—' : `${(check.utilization * 100).toFixed(2)}%`}</b></span><Status value={check.status} />{check.status === 'FAIL' && <button className="assistant-link">Resolver con Design Assistant ›</button>}</div></article>)}</div>
 }
 
 function Overview({ state, onNavigate }: { state: any; onNavigate: (module: ModuleId) => void }) {
-  return <div className="overview-grid"><section className="hero-panel"><span className="eyebrow">TANK T-78 · ENGINEERING WORKSPACE</span><h2>Diseño, cálculo y geometría en un mismo modelo de información.</h2><p>Trabaje por disciplina, seleccione entidades físicas y acceda a la traza correspondiente sin abandonar el viewport.</p><div><button className="primary" onClick={() => onNavigate('shell')}>Abrir casco</button><button className="secondary" onClick={() => onNavigate('review')}>Revisar inputs</button></div></section><section className="overview-status"><span className="section-label">ESTADO ACTUAL</span><div><span>Revisión</span><strong>{state.revision ? `BASELINE R${state.revision}` : 'Borrador sin guardar'}</strong></div><div><span>Run</span><strong>{state.activeRun?.id?.slice(0, 12) || 'No calculado'}</strong></div><div><span>Inputs</span><strong>{Object.keys(state.validation).length ? `${Object.keys(state.validation).length} errores` : 'Completos'}</strong></div><div><span>Modelo 3D</span><strong>{state.result ? '192 shell plates' : 'Pendiente de cálculo'}</strong></div></section><section className="quick-modules">{(['geometry', 'shell', 'seismic', 'anchorage', 'results', 'history'] as ModuleId[]).map(id => <button key={id} onClick={() => onNavigate(id)}><span>{moduleMeta[id].eyebrow}</span><strong>{moduleMeta[id].title}</strong><p>{moduleMeta[id].description}</p></button>)}</section></div>
+  return <div className="overview-grid"><section className="hero-panel"><span className="eyebrow">TANK {DISPLAY_TANK_TAG} · ENGINEERING WORKSPACE</span><h2>Diseño, cálculo y geometría en un mismo modelo de información.</h2><p>Trabaje por disciplina, seleccione entidades físicas y acceda a la traza correspondiente sin abandonar el viewport.</p><div><button className="primary" onClick={() => onNavigate('shell')}>Abrir casco</button><button className="secondary" onClick={() => onNavigate('review')}>Revisar inputs</button></div></section><section className="overview-status"><span className="section-label">ESTADO ACTUAL</span><div><span>Revisión</span><strong>{state.revision ? `BASELINE R${state.revision}` : 'Borrador sin guardar'}</strong></div><div><span>Run</span><strong>{state.activeRun?.id?.slice(0, 12) || 'No calculado'}</strong></div><div><span>Inputs</span><strong>{Object.keys(state.validation).length ? `${Object.keys(state.validation).length} errores` : 'Completos'}</strong></div><div><span>Modelo 3D</span><strong>{state.result ? '192 shell plates' : 'Pendiente de cálculo'}</strong></div></section><section className="quick-modules">{(['geometry', 'shell', 'seismic', 'anchorage', 'results', 'history'] as ModuleId[]).map(id => <button key={id} onClick={() => onNavigate(id)}><span>{moduleMeta[id].eyebrow}</span><strong>{moduleMeta[id].title}</strong><p>{moduleMeta[id].description}</p></button>)}</section></div>
 }
 
 function Review({ state, onNavigate }: { state: any; onNavigate: (module: ModuleId) => void }) {
@@ -92,7 +94,7 @@ function Review({ state, onNavigate }: { state: any; onNavigate: (module: Module
 
 function GlobalResults({ state, onNavigate }: { state: any; onNavigate: (module: ModuleId) => void }) {
   if (!state.result) return <div className="workspace-empty"><strong>No calculation run selected.</strong><span>Ejecute el motor para generar el resumen global.</span></div>
-  return <div className="global-results"><div className="overall-banner"><div><span>OVERALL</span><h2>{state.result.overall_status.replaceAll('_', ' ')}</h2><p>Perfil API650_12E_T78 · Motor {state.result.engine_version}</p></div><Status value={state.result.overall_status} /></div><div className="global-card-grid">{['shell', 'bottom', 'wind', 'seismic', 'anchorage'].map(key => <button key={key} onClick={() => onNavigate(key as ModuleId)}><span>{key}</span><Status value={state.result.summary[key].status || 'PASS'} /><strong>{key === 'seismic' ? `J ${state.result.summary.seismic.J.toFixed(4)}` : key === 'shell' ? `${(state.result.summary.shell.max_utilization * 100).toFixed(1)}% max` : key === 'anchorage' ? `${state.result.summary.anchorage.selected_bolts} bolts` : 'Ver resultados'}</strong><small>Abrir módulo ›</small></button>)}</div></div>
+  return <div className="global-results"><div className="overall-banner"><div><span>OVERALL</span><h2>{state.result.overall_status.replaceAll('_', ' ')}</h2><p>Perfil {DISPLAY_PROFILE} · Motor {state.result.engine_version}</p></div><Status value={state.result.overall_status} /></div><div className="global-card-grid">{['shell', 'bottom', 'wind', 'seismic', 'anchorage'].map(key => <button key={key} onClick={() => onNavigate(key as ModuleId)}><span>{key}</span><Status value={state.result.summary[key].status || 'PASS'} /><strong>{key === 'seismic' ? `J ${state.result.summary.seismic.J.toFixed(4)}` : key === 'shell' ? `${(state.result.summary.shell.max_utilization * 100).toFixed(1)}% max` : key === 'anchorage' ? `${state.result.summary.anchorage.selected_bolts} bolts` : 'Ver resultados'}</strong><small>Abrir módulo ›</small></button>)}</div></div>
 }
 
 function History({ state }: { state: any }) {
@@ -114,7 +116,8 @@ function Variants({ state }: { state: any }) {
 
 export default function ModuleWorkspace({ state, activeModule, onNavigate }: Props) {
   const meta = moduleMeta[activeModule]
-  const showTabs = !['overview', 'review', 'results', 'variants', 'history'].includes(activeModule)
+  const availableTabs = moduleCapabilities[activeModule] || []
+  const showTabs = availableTabs.length > 1
   const modelModule = ['geometry', 'shell', 'bottom', 'roof', 'anchorage'].includes(activeModule)
   const mainContent = useMemo(() => {
     if (!state.draftInputs) return <div className="workspace-empty"><strong>Cargando datos del proyecto...</strong></div>
@@ -123,7 +126,7 @@ export default function ModuleWorkspace({ state, activeModule, onNavigate }: Pro
     if (activeModule === 'results') return <GlobalResults state={state} onNavigate={onNavigate} />
     if (activeModule === 'history') return <History state={state} />
     if (activeModule === 'variants') return <Variants state={state} />
-    if (activeModule === 'code') return <div className="code-capabilities"><InputGrid module="code" inputs={state.draftInputs} validation={state.validation} onUpdate={state.updateInput} /><section><span className="section-label">CALCULATION CAPABILITIES</span>{[['Shell One-Foot', 'IMPLEMENTED'], ['Seismic Annex E · T-78', 'IMPLEMENTED'], ['Wind coefficient chain', 'REVIEW'], ['Geodesic roof structural design', 'NOT IMPLEMENTED'], ['Nozzles / API 653 / FEA', 'NOT IMPLEMENTED']].map(([name, status]) => <div key={name}><strong>{name}</strong><Status value={status} compact /></div>)}</section></div>
+    if (activeModule === 'code') return <div className="code-capabilities"><InputGrid module="code" inputs={state.draftInputs} validation={state.validation} onUpdate={state.updateInput} /><section><span className="section-label">CALCULATION CAPABILITIES</span>{[['Shell One-Foot', 'IMPLEMENTED'], [`Seismic Annex E · ${DISPLAY_TANK_TAG}`, 'IMPLEMENTED'], ['Wind coefficient chain', 'REVIEW'], ['Geodesic roof structural design', 'NOT_IMPLEMENTED'], ['Nozzles / API 653 / FEA', 'NOT_IMPLEMENTED']].map(([name, status]) => <div key={name}><strong>{name}</strong><Status value={status} compact /></div>)}</section></div>
     if (activeModule === 'shell' && state.activeMode === 'inputs') return <div className="shell-inputs"><InputGrid module="shell" inputs={state.draftInputs} validation={state.validation} onUpdate={state.updateInput} /><CourseTable state={state} edit /></div>
     if (state.activeMode === 'inputs') return <InputGrid module={activeModule} inputs={state.draftInputs} validation={state.validation} onUpdate={state.updateInput} />
     if (state.activeMode === 'results') return <ResultValues state={state} module={activeModule} />
@@ -131,8 +134,8 @@ export default function ModuleWorkspace({ state, activeModule, onNavigate }: Pro
   }, [activeModule, onNavigate, state])
 
   return <section className="main-workspace panel">
-    <header className="workspace-header"><div><span className="eyebrow">{meta.eyebrow}</span><h1>{meta.title}</h1><p>{meta.description}</p></div><div className="workspace-command">{state.dirty && <span className="dirty-badge">● CAMBIOS SIN GUARDAR</span>}{showTabs && <button className="secondary" onClick={() => state.setActiveMode('inputs')}>Editar todos los parámetros</button>}</div></header>
-    {showTabs && <div className="workspace-tabs">{(['inputs', 'results', 'checks'] as const).map(mode => <button key={mode} className={state.activeMode === mode ? 'active' : ''} onClick={() => state.setActiveMode(mode)}>{mode}</button>)}</div>}
+    <header className="workspace-header"><div><span className="eyebrow">{meta.eyebrow}</span><h1>{meta.title}</h1><p>{meta.description}</p>{state.resultsStale && <p className="stale-results">RESULTADOS ANTERIORES · el borrador contiene cambios; recalcule para revalidar.</p>}</div><div className="workspace-command">{state.dirty && <span className="dirty-badge">● CAMBIOS SIN GUARDAR</span>}{showTabs && <button className="secondary" onClick={() => state.setActiveMode('inputs')}>Editar todos los parámetros</button>}</div></header>
+    {showTabs && <div className="workspace-tabs">{availableTabs.map(mode => <button key={mode} className={state.activeMode === mode ? 'active' : ''} onClick={() => state.setActiveMode(mode)}>{mode === 'inputs' ? 'Entradas' : mode === 'results' ? 'Resultados' : 'Verificaciones'}</button>)}</div>}
     <div className={`workspace-content ${modelModule ? 'with-model' : ''}`}>
       {modelModule ? <><div className="module-data-pane">{mainContent}</div><div className="module-model-pane"><EngineeringModel state={state} showBrowser={activeModule === 'geometry' || activeModule === 'shell'} />{activeModule === 'roof' && <div className="model-scope-note"><strong>Geodesic roof geometry: REPRESENTATIVE</strong><span>Detailed structural design: SUPPLIER SCOPE / NOT IMPLEMENTED</span></div>}</div></> : mainContent}
     </div>

@@ -16,3 +16,7 @@ Los resultados de un run incluyen el hash SHA-256 de inputs, versión del motor,
 
 La migración inicial está en `backend/alembic/versions/0001_initial.py`.
 
+# V2 design studies
+
+`design_studies` relates the immutable source run and baseline revision to a target check, objective, variable registry selection, search space, engine/profile and summary. `design_study_variants` relates every tested values/changes set to a real candidate `calculation_run`, target result, ranking and passing flag. Applying a candidate creates only an audited draft changeset; revision creation remains a separate explicit action.
+

@@ -33,3 +33,13 @@ Base: `/api/v1`.
 
 Si `TANK650_API_KEY` tiene valor, los endpoints de escritura requieren `X-API-Key`.
 
+# Design Assistant V2
+
+- `GET /api/v1/capabilities/modules` returns meaningful workspace capabilities.
+- `POST /api/v1/runs/{run_id}/design-assistant/analyze` explains failed checks and classifies editable/fixed variables.
+- `POST /api/v1/runs/{run_id}/design-assistant/studies` runs up to 500 deterministic candidate simulations for up to three registered design variables.
+- `GET /api/v1/design-studies/{study_id}` returns status, provenance, search space and compact summary.
+- `GET /api/v1/design-studies/{study_id}/variants` returns every candidate and calculation run.
+- `GET /api/v1/design-studies/{study_id}/recommendations` returns only truly passing candidates.
+- `POST /api/v1/design-studies/{study_id}/recommendations/{recommendation_id}/apply` returns full or partial draft changes. It never mutates a revision and always requires recalculation.
+
